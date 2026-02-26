@@ -115,9 +115,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
 
+    # CookieJWTAuthentication is used for the purpose of better security
+    # It reads the access token from the cookies so tht attacker cannot access the tokens
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'accounts.authentication.CookieJWTAuthentication',
-    )
+    ),
+
+    # This make sure that all the API endpoint requires authentication unless we overide it in views.py
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 
 }
 
