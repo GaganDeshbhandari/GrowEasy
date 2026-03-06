@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db.models import Avg
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -30,11 +31,14 @@ class CustomUser(AbstractUser):
   phone = models.CharField(max_length=15, unique=True)
   role = models.CharField(choices=ROLE_CHOICES, max_length=15)
 
+  is_active  = models.BooleanField(default=True)
+  is_staff   = models.BooleanField(default=False)
+
   objects = CustomUserManager()
 
 
   USERNAME_FIELD = 'email'
-  REQUIRED_FIELDS = ['first_name', 'phone']
+  REQUIRED_FIELDS = ['first_name', 'phone','role']
 
   @property
   def fullname(self):
@@ -42,3 +46,40 @@ class CustomUser(AbstractUser):
 
   def __str__(self):
     return f"{self.fullname}"
+
+class FarmerProfile(models.Model):
+   GENDER_CHOICES = [
+      ('male', 'Male'),
+      ('female', 'Female')
+   ]
+   user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+   picture = models.ImageField(upload_to='farmer/profiles/')
+   gender = models.CharField(max_length=40, choices=GENDER_CHOICES)
+   location = models.TextField() # will integrate the Maps API for this later
+
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   def __str__(self):
+      return f"Farmer: {self.user.fullname}"
+
+
+#    This will uncommented later after builiding the ratings model
+#    @property
+#    def avg_rating(self):
+#       ratings = self.ratings.all()
+
+#       if not ratings:
+#          return 0
+#       return ratings.aggreagate(Avg('rating'))['rating__avg']
+
+
+class CustomerProfile(models.Model):
+   user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+   picture = models.ImageField(upload_to='customer/profiles/')
+
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   def __str__(self):
+      return f"Customer: {self.user.fullname}"
