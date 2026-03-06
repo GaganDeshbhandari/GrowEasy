@@ -53,9 +53,9 @@ class FarmerProfile(models.Model):
       ('female', 'Female')
    ]
    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-   picture = models.ImageField(upload_to='farmer/profiles/')
-   gender = models.CharField(max_length=40, choices=GENDER_CHOICES)
-   location = models.TextField() # will integrate the Maps API for this later
+   picture = models.ImageField(upload_to='farmer/profiles/', null=True, blank=True)
+   gender = models.CharField(max_length=40, choices=GENDER_CHOICES, null=True, blank=True)
+   location = models.TextField(null=True, blank=True) # will integrate the Maps API for this later
 
    created_at = models.DateTimeField(auto_now_add=True)
    updated_at = models.DateTimeField(auto_now=True)
@@ -76,7 +76,7 @@ class FarmerProfile(models.Model):
 
 class CustomerProfile(models.Model):
    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-   picture = models.ImageField(upload_to='customer/profiles/')
+   picture = models.ImageField(upload_to='customer/profiles/', null=True, blank=True)
 
    created_at = models.DateTimeField(auto_now_add=True)
    updated_at = models.DateTimeField(auto_now=True)

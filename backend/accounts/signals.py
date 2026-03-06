@@ -2,10 +2,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import User, FarmerProfile, CustomerProfile, Cart
+from .models import CustomUser, FarmerProfile, CustomerProfile
 
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     """
     When a new User is created, automatically create the matching profile
@@ -14,10 +14,10 @@ def create_user_profile(sender, instance, created, **kwargs):
     if not created:
         return
 
-    if instance.role == User.Role.FARMER:
+    if instance.role == 'farmer':
         FarmerProfile.objects.create(user=instance)
 
-    elif instance.role == User.Role.CUSTOMER:
+    elif instance.role == 'customer':
         customer_profile = CustomerProfile.objects.create(user=instance)
 
         # Cart will be added later
