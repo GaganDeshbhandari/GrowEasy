@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 
-from .models import CustomUser
+from .models import CustomUser, FarmerProfile, CustomerProfile
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     # write only make sure that Serializer only takes the input
@@ -38,6 +38,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     #     return super().to_representation(instance)
 
 class LoginSerializer(serializers.Serializer):
+
   email = serializers.EmailField()
   password = serializers.CharField(write_only=True)
 
@@ -53,3 +54,21 @@ class LoginSerializer(serializers.Serializer):
 
       data['user'] = user
       return data
+
+
+class FarmerProfileSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    # will add the average_rating later after building the rating model
+    # average_rating = serializers.ModelField(read_only=True)
+    class Meta:
+        model = FarmerProfile
+        fields = ['id','user','gender','location','picture','created_at','updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = CustomerProfile
+        fields = ['id','user','picture','created_at','updated_at']
+        read_only_fields = ['created_at', 'updated_at']

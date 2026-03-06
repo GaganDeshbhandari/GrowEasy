@@ -1,11 +1,14 @@
 from rest_framework.views import APIView
+from rest_framework import generics
 from rest_framework.response import Response
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
-from .serializers import UserRegistrationSerializer, LoginSerializer
+from .serializers import UserRegistrationSerializer, LoginSerializer, FarmerProfileSerializer, CustomerProfileSerializer
+from .permissions import FarmerPermission, CustomerPermission
+from .models import FarmerProfile, CustomerProfile
 
 
 # APIView is more preferred for auth opertaions
@@ -161,3 +164,18 @@ class RefreshView(APIView):
     )
 
     return response
+
+class FarmerProfileView(generics.RetrieveUpdateAPIView):
+  serializer_class = FarmerProfileSerializer
+  permission_classes = [permissions.IsAuthenticated,FarmerPermission]
+
+  def get_object(self):
+    return FarmerProfile.objects.get(user=self.request.user)
+
+
+class CustomerProfileView(generics.RetrieveUpdateAPIView):
+  serializer_class = CustomerProfileSerializer
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def get_object(self):
+    return CustomerProfile.objects.get(user=self.request.user)
