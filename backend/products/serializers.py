@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Product, ProductCategory, ProductImage
 from accounts.models import FarmerProfile
 
-
 # 1. ProductCategorySerializer
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
