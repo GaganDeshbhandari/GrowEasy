@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 
-from .models import CustomUser, FarmerProfile, CustomerProfile
+from .models import CustomUser, FarmerProfile, CustomerProfile, Address, FarmerRating
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     # write only make sure that Serializer only takes the input
@@ -72,3 +72,35 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         model = CustomerProfile
         fields = ['id','user','picture','created_at','updated_at']
         read_only_fields = ['created_at', 'updated_at']
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = [
+            'id',
+            'customer',
+            'address_type',
+            'full_name',
+            'phone',
+            'address',
+            'city',
+            'state',
+            'pincode',
+            'is_default',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['customer', 'created_at', 'updated_at']
+
+
+class FarmerRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FarmerRating
+        fields = ['id', 'farmer', 'customer', 'rating', 'created_at']
+        read_only_fields = ['farmer', 'customer', 'created_at']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('Rating must be between 1 and 5')
+        return value

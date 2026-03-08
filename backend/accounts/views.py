@@ -1,14 +1,22 @@
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 
-from .serializers import UserRegistrationSerializer, LoginSerializer, FarmerProfileSerializer, CustomerProfileSerializer
+from .serializers import (
+  UserRegistrationSerializer,
+  LoginSerializer,
+  FarmerProfileSerializer,
+  CustomerProfileSerializer,
+  AddressSerializer,
+  FarmerRatingSerializer
+)
 from .permissions import FarmerPermission, CustomerPermission
-from .models import FarmerProfile, CustomerProfile
+from .models import FarmerProfile, CustomerProfile, Address, FarmerRating
 
 
 # APIView is more preferred for auth opertaions
@@ -179,3 +187,60 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
 
   def get_object(self):
     return CustomerProfile.objects.get(user=self.request.user)
+
+
+class AddressListCreateView(generics.ListCreateAPIView):
+  serializer_class = AddressSerializer
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def get_queryset(self):
+    return Address.objects.filter(customer__user=self.request.user)
+
+  def perform_create(self, serializer):
+    serializer.save(customer=self.request.user.customerprofile)
+
+
+class AddressDetailView(generics.RetrieveUpdateDestroyAPIView):
+  serializer_class = AddressSerializer
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def get_queryset(self):
+    return Address.objects.filter(customer__user=self.request.user)
+
+
+class SetDefaultAddressView(APIView):
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def patch(self, request, pk):
+    customer_profile = request.user.customerprofile
+    address = Address.objects.filter(customer=customer_profile, pk=pk).first()
+
+    if not address:
+      return Response({'detail': 'Address not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    Address.objects.filter(customer=customer_profile, is_default=True).update(is_default=False)
+    address.is_default = True
+    address.save()
+
+    return Response(AddressSerializer(address).data, status=status.HTTP_200_OK)
+
+
+class FarmerRatingView(APIView):
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def post(self, request, pk):
+    farmer = get_object_or_404(FarmerProfile, pk=pk)
+    customer = request.user.customerprofile
+
+    serializer = FarmerRatingSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    rating_obj, created = FarmerRating.objects.update_or_create(
+      farmer=farmer,
+      customer=customer,
+      defaults={'rating': serializer.validated_data['rating']}
+    )
+
+    response_serializer = FarmerRatingSerializer(rating_obj)
+    response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+    return Response(response_serializer.data, status=response_status)

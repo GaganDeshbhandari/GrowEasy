@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models import Avg
+from django.core.validators import MinValueValidator, MaxValueValidator
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -63,15 +64,12 @@ class FarmerProfile(models.Model):
    def __str__(self):
       return f"Farmer: {self.user.fullname}"
 
-
-#    This will uncommented later after builiding the ratings model
-#    @property
-#    def avg_rating(self):
-#       ratings = self.ratings.all()
-
-#       if not ratings:
-#          return 0
-#       return ratings.aggreagate(Avg('rating'))['rating__avg']
+   @property
+   def avg_rating(self):
+      ratings = self.ratings.all()
+      if not ratings.exists():
+         return 0
+      return ratings.aggregate(Avg('rating'))['rating__avg']
 
 
 class CustomerProfile(models.Model):
@@ -83,3 +81,48 @@ class CustomerProfile(models.Model):
 
    def __str__(self):
       return f"Customer: {self.user.fullname}"
+
+
+class Address(models.Model):
+   class AddressType(models.TextChoices):
+      HOME = 'home', 'Home'
+      WORK = 'work', 'Work'
+      OTHER = 'other', 'Other'
+
+   customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='addresses')
+   address_type = models.CharField(max_length=10, choices=AddressType.choices)
+   full_name = models.CharField(max_length=200)
+   phone = models.CharField(max_length=20)
+   address = models.TextField()
+   city = models.CharField(max_length=100)
+   state = models.CharField(max_length=100)
+   pincode = models.CharField(max_length=10)
+   is_default = models.BooleanField(default=False)
+
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   def save(self, *args, **kwargs):
+    if self.is_default:
+        Address.objects.filter(
+            customer=self.customer,
+            is_default=True
+        ).update(is_default=False)
+    super().save(*args, **kwargs)
+
+   def __str__(self):
+      return f"{self.full_name} - {self.address_type}"
+
+
+class FarmerRating(models.Model):
+   farmer = models.ForeignKey(FarmerProfile, on_delete=models.CASCADE, related_name='ratings')
+   customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='farmer_ratings')
+   rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   class Meta:
+      unique_together = ('farmer', 'customer')
+
+   def __str__(self):
+      return f"{self.customer.user.fullname} rated {self.farmer.user.fullname}: {self.rating}"
