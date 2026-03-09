@@ -2,6 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.conf import settings
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -13,10 +15,12 @@ from .serializers import (
   FarmerProfileSerializer,
   CustomerProfileSerializer,
   AddressSerializer,
-  FarmerRatingSerializer
+  FarmerRatingSerializer,
+  ForgotPasswordSerializer,
+  ResetPasswordSerializer
 )
 from .permissions import FarmerPermission, CustomerPermission
-from .models import FarmerProfile, CustomerProfile, Address, FarmerRating
+from .models import FarmerProfile, CustomerProfile, Address, FarmerRating, PasswordResetToken, CustomUser
 
 
 # APIView is more preferred for auth opertaions
@@ -33,7 +37,7 @@ class RegisterView(APIView):
     if serializer.is_valid():
       user = serializer.save()
     else:
-      return Response(serializer.error_messages, status=status.HTTP_400_BAD_REQUEST)
+      return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     token = RefreshToken.for_user(user)
 
@@ -59,6 +63,9 @@ class RegisterView(APIView):
       samesite='Lax',
       path='/'
     )
+
+    print(request.data)
+    print(type(request.data))
 
     return response
 
@@ -244,3 +251,79 @@ class FarmerRatingView(APIView):
     response_serializer = FarmerRatingSerializer(rating_obj)
     response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
     return Response(response_serializer.data, status=response_status)
+
+
+class ForgotPasswordView(APIView):
+  permission_classes = [permissions.AllowAny]
+
+  def post(self, request):
+    serializer = ForgotPasswordSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    email = serializer.validated_data['email']
+
+    try:
+      user = CustomUser.objects.get(email=email)
+
+      # Delete any existing tokens for this user
+      PasswordResetToken.objects.filter(user=user).delete()
+
+      # Create new token
+      reset_token = PasswordResetToken.objects.create(user=user)
+
+      # Send email
+      send_mail(
+        subject='Password Reset Request',
+        message=f'Your OTP for password reset is: {reset_token.otp}\nThis OTP expires in 10 minutes.',
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=[user.email],
+        fail_silently=False,
+      )
+    except CustomUser.DoesNotExist:
+      # Security best practice: don't reveal if email exists
+      pass
+
+    return Response(
+      {'message': 'If an account exists with that email, a password reset link has been sent.'},
+      status=status.HTTP_200_OK
+    )
+
+
+class ResetPasswordView(APIView):
+  permission_classes = [permissions.AllowAny]
+
+  def post(self, request):
+    serializer = ResetPasswordSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    token_otp = serializer.validated_data['otp']
+    new_password = serializer.validated_data['new_password']
+
+    try:
+      reset_token = PasswordResetToken.objects.get(otp=token_otp)
+
+      # Check if token is expired
+      if reset_token.is_expired():
+        return Response(
+          {'error': 'This password reset token has expired.'},
+          status=status.HTTP_400_BAD_REQUEST
+        )
+
+      # Update user password
+      user = reset_token.user
+      user.set_password(new_password)
+      user.save()
+
+      # Delete the token after successful password reset
+      reset_token.delete()
+
+      return Response(
+        {'message': 'Password has been reset successfully.'},
+        status=status.HTTP_200_OK
+      )
+
+    except PasswordResetToken.DoesNotExist:
+      return Response(
+        {'error': 'Invalid password reset token.'},
+        status=status.HTTP_400_BAD_REQUEST
+      )

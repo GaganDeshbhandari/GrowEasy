@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models import Avg
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from datetime import timedelta
+import random
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -126,3 +129,23 @@ class FarmerRating(models.Model):
 
    def __str__(self):
       return f"{self.customer.user.fullname} rated {self.farmer.user.fullname}: {self.rating}"
+
+
+class PasswordResetToken(models.Model):
+   user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='password_reset_tokens')
+   otp= models.CharField(max_length=6)
+   created_at = models.DateTimeField(auto_now_add=True)
+   expires_at = models.DateTimeField()
+
+   def save(self, *args, **kwargs):
+    if not self.otp:
+        self.otp = str(random.randint(100000, 999999))
+    if not self.expires_at:
+        self.expires_at = timezone.now() + timedelta(minutes=10)  # OTP expires in 10 minutes
+    super().save(*args, **kwargs)
+
+   def is_expired(self):
+      return timezone.now() > self.expires_at
+
+   def __str__(self):
+      return f"Password reset token for {self.user.email}"

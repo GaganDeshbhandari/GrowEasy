@@ -53,6 +53,7 @@ class LoginSerializer(serializers.Serializer):
           raise serializers.ValidationError("User is Not active")
 
       data['user'] = user
+      data['phone'] = user.phone
       return data
 
 
@@ -104,3 +105,18 @@ class FarmerRatingSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError('Rating must be between 1 and 5')
         return value
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    otp = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("Passwords don't match")
+        return data
