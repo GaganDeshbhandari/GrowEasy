@@ -284,7 +284,7 @@ class ForgotPasswordView(APIView):
       pass
 
     return Response(
-      {'message': 'If an account exists with that email, a password reset link has been sent.'},
+      {'message': f'OTP has been sent to the {email}'},
       status=status.HTTP_200_OK
     )
 
