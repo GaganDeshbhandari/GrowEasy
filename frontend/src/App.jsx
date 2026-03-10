@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Landing from "./pages/Landing";
+import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // --- Auth Pages ---
@@ -27,10 +29,12 @@ import FarmerProfile from "./pages/farmer/FarmerProfile";
 
 function App() {
   return (
-    // AuthProvider wraps everything so any page can access login/logout/user
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          {/* Navbar sits here so it shows on every single page */}
+          <Navbar />
+          <Routes>
 
           {/* ─── Default redirect ─── */}
           <Route path="/" element={<Landing />} />
@@ -88,8 +92,9 @@ function App() {
           } />
 
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

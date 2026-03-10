@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
-/* Remove Vite default styles that conflict with Tailwind */
+/*
+  Override Tailwind v4's built-in dark mode from media-query to class-based.
+  This replaces the default @media (prefers-color-scheme: dark) behavior
+  so only the .dark class on <html> activates dark: variants.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light mode base */
+:root {
+  color-scheme: light;
+}
+
+/* When dark class is on html, tell the browser we're in dark mode */
+:root.dark {
+  color-scheme: dark;
+}
+
+/* Base styles */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+}
+
+/* Light mode: pure white. Dark mode: very dark */
+body {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+.dark body {
+  background-color: #030712;
+  color: #f3f4f6;
 }
