@@ -53,6 +53,12 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         required=False
     )
     primary_image_index = serializers.IntegerField(write_only=True, required=False, min_value=0)
+    delete_image_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        write_only=True,
+        required=False
+    )
+    primary_existing_image_id = serializers.IntegerField(write_only=True, required=False, min_value=1)
 
     class Meta:
         model = Product
@@ -65,6 +71,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'categories',
             'images',
             'primary_image_index',
+            'delete_image_ids',
+            'primary_existing_image_id',
             'is_active'
         ]
         read_only_fields = ['id']
@@ -98,6 +106,8 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         categories = validated_data.pop('categories', None)
         images = validated_data.pop('images', None)
         primary_image_index = validated_data.pop('primary_image_index', 0)
+        delete_image_ids = validated_data.pop('delete_image_ids', [])
+        primary_existing_image_id = validated_data.pop('primary_existing_image_id', None)
 
         # Update all other fields
         for attr, value in validated_data.items():
@@ -108,18 +118,37 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         if categories is not None:
             instance.categories.set(categories)
 
-        if images is not None:
-            instance.images.all().delete()
+        if delete_image_ids:
+            instance.images.filter(id__in=delete_image_ids).delete()
 
-            if images:
-                if primary_image_index >= len(images):
-                    primary_image_index = 0
+        new_images = []
+        if images is not None and images:
+            if primary_image_index >= len(images):
+                primary_image_index = 0
 
-                for index, image_file in enumerate(images):
-                    ProductImage.objects.create(
-                        product=instance,
-                        image=image_file,
-                        is_primary=(index == primary_image_index)
-                    )
+            for index, image_file in enumerate(images):
+                new_image = ProductImage.objects.create(
+                    product=instance,
+                    image=image_file,
+                    is_primary=False
+                )
+                new_images.append(new_image)
+
+        if primary_existing_image_id:
+            target_image = instance.images.filter(id=primary_existing_image_id).first()
+            if target_image:
+                instance.images.update(is_primary=False)
+                target_image.is_primary = True
+                target_image.save(update_fields=['is_primary'])
+        elif new_images:
+            instance.images.update(is_primary=False)
+            primary_new_image = new_images[primary_image_index]
+            primary_new_image.is_primary = True
+            primary_new_image.save(update_fields=['is_primary'])
+
+        if instance.images.exists() and not instance.images.filter(is_primary=True).exists():
+            fallback_image = instance.images.first()
+            fallback_image.is_primary = True
+            fallback_image.save(update_fields=['is_primary'])
 
         return instance

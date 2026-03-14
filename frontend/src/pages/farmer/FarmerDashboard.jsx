@@ -19,6 +19,7 @@ const FarmerDashboard = () => {
 
 	const [deletingId, setDeletingId] = useState(null);
 	const [togglingId, setTogglingId] = useState(null);
+	const [deleteTargetId, setDeleteTargetId] = useState(null);
 
 	const fetchMyProducts = async (page = 1) => {
 		try {
@@ -71,15 +72,13 @@ const FarmerDashboard = () => {
 	};
 
 	const handleDelete = async (productId) => {
-		const confirmed = window.confirm("Are you sure you want to delete this product?");
-		if (!confirmed) return;
-
 		try {
 			setDeletingId(productId);
 			await api.delete(`/products/${productId}/`);
 
 			setProducts((prev) => prev.filter((product) => product.id !== productId));
 			setCount((prev) => Math.max(0, prev - 1));
+			setDeleteTargetId(null);
 		} catch {
 			setError("Failed to delete product.");
 		} finally {
@@ -157,6 +156,7 @@ const FarmerDashboard = () => {
 	}
 
 	return (
+		<>
 		<div className="max-w-7xl mx-auto px-4 py-10">
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
 				<div>
@@ -241,7 +241,7 @@ const FarmerDashboard = () => {
 									</button>
 
 									<button
-										onClick={() => handleDelete(product.id)}
+										onClick={() => setDeleteTargetId(product.id)}
 										disabled={isDeleting}
 										className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-semibold"
 									>
@@ -284,6 +284,46 @@ const FarmerDashboard = () => {
 				</button>
 			</div>
 		</div>
+
+		{deleteTargetId !== null && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+				<div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-xl">
+					<div className="flex items-start gap-3 mb-4">
+						<div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 flex items-center justify-center shrink-0">
+							<svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+							</svg>
+						</div>
+						<div>
+							<h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Delete Product</h3>
+							<p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+								Are you sure you want to delete this product? This action cannot be undone.
+							</p>
+						</div>
+					</div>
+
+					<div className="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							onClick={() => setDeleteTargetId(null)}
+							disabled={deletingId !== null}
+							className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-200 disabled:opacity-60"
+						>
+							Cancel
+						</button>
+						<button
+							type="button"
+							onClick={() => handleDelete(deleteTargetId)}
+							disabled={deletingId !== null}
+							className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-60"
+						>
+							{deletingId !== null ? "Deleting..." : "Yes, Delete"}
+						</button>
+					</div>
+				</div>
+			</div>
+		)}
+		</>
 	);
 };
 
