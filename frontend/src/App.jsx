@@ -15,6 +15,7 @@ import ResetPassword from "./pages/auth/ResetPassword";
 // --- Public Product Pages ---
 import ProductList from "./pages/products/ProductList";
 import ProductDetail from "./pages/products/ProductDetail";
+import FarmerPublicProfile from "./pages/farmer/FarmerPublicProfile";
 
 // --- Customer Pages ---
 import Cart from "./pages/customer/Cart";
@@ -49,6 +50,7 @@ function App() {
           <Route path="/reset-password"  element={<ResetPassword />} />
           <Route path="/products"        element={<ProductList />} />
           <Route path="/products/:id"    element={<ProductDetail />} />
+          <Route path="/farmers/:id"     element={<FarmerPublicProfile />} />
 
           {/* ─── Customer Protected Routes — must be logged in as customer ─── */}
           <Route path="/cart" element={

@@ -218,7 +218,20 @@ const ProductList = () => {
                     {product.name}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                    Sold by <span className="font-medium text-gray-700 dark:text-gray-300">{product.farmer}</span>
+                    Sold by {product.farmer_id ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/farmers/${product.farmer_id}`);
+                        }}
+                        className="font-medium text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:underline"
+                      >
+                        {product.farmer}
+                      </button>
+                    ) : (
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{product.farmer}</span>
+                    )}
                   </p>
 
                   <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex items-end justify-between">

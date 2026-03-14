@@ -185,7 +185,17 @@ const ProductDetail = () => {
                 </h1>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Freshly harvested by <span className="font-bold text-gray-700 dark:text-gray-200">{product.farmer}</span>
+                  Freshly harvested by {product.farmer_id ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/farmers/${product.farmer_id}`)}
+                      className="font-bold text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 hover:underline"
+                    >
+                      {product.farmer}
+                    </button>
+                  ) : (
+                    <span className="font-bold text-gray-700 dark:text-gray-200">{product.farmer}</span>
+                  )}
                 </p>
               </div>
 

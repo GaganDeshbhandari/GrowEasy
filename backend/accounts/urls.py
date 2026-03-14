@@ -10,6 +10,7 @@ urlpatterns = [
   path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
   path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
   path('farmer/profile/',FarmerProfileView.as_view(), name='farmer-profile'),
+  path('farmers/<int:pk>/', FarmerPublicProfileView.as_view(), name='farmer-public-profile-short'),
   path('farmers/<int:pk>/public-profile/', FarmerPublicProfileView.as_view(), name='farmer-public-profile'),
   path('farmer/certifications/', FarmerCertificationListCreateView.as_view(), name='farmer-certification-list-create'),
   path('farmer/certifications/<int:pk>/', FarmerCertificationDetailView.as_view(), name='farmer-certification-detail'),

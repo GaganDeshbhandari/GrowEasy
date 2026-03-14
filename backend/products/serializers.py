@@ -21,12 +21,14 @@ class ProductReadSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     categories = ProductCategorySerializer(many=True, read_only=True)
     farmer = serializers.StringRelatedField(read_only=True)
+    farmer_id = serializers.IntegerField(source='farmer.id', read_only=True)
 
     class Meta:
         model = Product
         fields = [
             'id',
             'farmer',
+            'farmer_id',
             'name',
             'stock',
             'unit',
@@ -37,7 +39,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['farmer', 'created_at', 'updated_at', 'images', 'categories']
+        read_only_fields = ['farmer', 'farmer_id', 'created_at', 'updated_at', 'images', 'categories']
 
 
 # 3. ProductSerializer - Write (accepts category IDs)
