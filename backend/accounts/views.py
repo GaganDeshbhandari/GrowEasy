@@ -18,6 +18,7 @@ from .serializers import (
   AddressSerializer,
   FarmerRatingSerializer,
   FarmerCertificationSerializer,
+  FarmerPublicProfileSerializer,
   ForgotPasswordSerializer,
   ResetPasswordSerializer
 )
@@ -189,6 +190,14 @@ class FarmerProfileView(generics.RetrieveUpdateAPIView):
 
   def get_object(self):
     return FarmerProfile.objects.get(user=self.request.user)
+
+
+class FarmerPublicProfileView(generics.RetrieveAPIView):
+  serializer_class = FarmerPublicProfileSerializer
+  permission_classes = [permissions.AllowAny]
+
+  def get_object(self):
+    return get_object_or_404(FarmerProfile, pk=self.kwargs['pk'])
 
 
 class CustomerProfileView(generics.RetrieveUpdateAPIView):

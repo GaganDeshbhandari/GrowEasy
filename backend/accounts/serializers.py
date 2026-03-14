@@ -156,6 +156,38 @@ class FarmerCertificationSerializer(serializers.ModelSerializer):
         read_only_fields = ['farmer', 'is_verified', 'created_at', 'updated_at']
 
 
+class FarmerPublicProfileSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    avg_rating = serializers.SerializerMethodField()
+    certifications = serializers.SerializerMethodField()
+    total_products = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FarmerProfile
+        fields = [
+            'id',
+            'name',
+            'picture',
+            'location',
+            'avg_rating',
+            'certifications',
+            'total_products',
+        ]
+
+    def get_name(self, obj):
+        return obj.user.fullname
+
+    def get_avg_rating(self, obj):
+        return obj.avg_rating
+
+    def get_certifications(self, obj):
+        verified_certifications = obj.certifications.filter(is_verified=True)
+        return FarmerCertificationSerializer(verified_certifications, many=True, context=self.context).data
+
+    def get_total_products(self, obj):
+        return obj.products.count()
+
+
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
