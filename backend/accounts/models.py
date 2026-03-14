@@ -54,7 +54,8 @@ class CustomUser(AbstractUser):
 class FarmerProfile(models.Model):
    GENDER_CHOICES = [
       ('male', 'Male'),
-      ('female', 'Female')
+      ('female', 'Female'),
+      ('other', 'Other')
    ]
    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
    picture = models.ImageField(upload_to='farmer/profiles/', null=True, blank=True)
@@ -129,6 +130,21 @@ class FarmerRating(models.Model):
 
    def __str__(self):
       return f"{self.customer.user.fullname} rated {self.farmer.user.fullname}: {self.rating}"
+
+
+class FarmerCertification(models.Model):
+   farmer = models.ForeignKey(FarmerProfile, on_delete=models.CASCADE, related_name='certifications')
+   title = models.CharField(max_length=255)
+   issued_by = models.CharField(max_length=255, blank=True, null=True)
+   issued_date = models.DateField(blank=True, null=True)
+   is_verified = models.BooleanField(default=False)
+   certificate_image = models.ImageField(upload_to='farmer/certifications/')
+
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   def __str__(self):
+      return f"{self.title} - {self.farmer.user.fullname}"
 
 
 class PasswordResetToken(models.Model):

@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework import generics
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
@@ -16,11 +17,12 @@ from .serializers import (
   CustomerProfileSerializer,
   AddressSerializer,
   FarmerRatingSerializer,
+  FarmerCertificationSerializer,
   ForgotPasswordSerializer,
   ResetPasswordSerializer
 )
 from .permissions import FarmerPermission, CustomerPermission
-from .models import FarmerProfile, CustomerProfile, Address, FarmerRating, PasswordResetToken, CustomUser
+from .models import FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification, PasswordResetToken, CustomUser
 
 
 # APIView is more preferred for auth opertaions
@@ -183,6 +185,7 @@ class RefreshView(APIView):
 class FarmerProfileView(generics.RetrieveUpdateAPIView):
   serializer_class = FarmerProfileSerializer
   permission_classes = [permissions.IsAuthenticated,FarmerPermission]
+  parser_classes = [MultiPartParser, FormParser]
 
   def get_object(self):
     return FarmerProfile.objects.get(user=self.request.user)
@@ -251,6 +254,27 @@ class FarmerRatingView(APIView):
     response_serializer = FarmerRatingSerializer(rating_obj)
     response_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
     return Response(response_serializer.data, status=response_status)
+
+
+class FarmerCertificationListCreateView(generics.ListCreateAPIView):
+  serializer_class = FarmerCertificationSerializer
+  permission_classes = [permissions.IsAuthenticated, FarmerPermission]
+  parser_classes = [MultiPartParser, FormParser]
+
+  def get_queryset(self):
+    return FarmerCertification.objects.filter(farmer__user=self.request.user)
+
+  def perform_create(self, serializer):
+    serializer.save(farmer=self.request.user.farmerprofile)
+
+
+class FarmerCertificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+  serializer_class = FarmerCertificationSerializer
+  permission_classes = [permissions.IsAuthenticated, FarmerPermission]
+  parser_classes = [MultiPartParser, FormParser]
+
+  def get_queryset(self):
+    return FarmerCertification.objects.filter(farmer__user=self.request.user)
 
 
 class ForgotPasswordView(APIView):

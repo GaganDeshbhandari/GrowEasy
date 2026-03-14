@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 
-from .models import CustomUser, FarmerProfile, CustomerProfile, Address, FarmerRating
+from .models import CustomUser, FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     # write only make sure that Serializer only takes the input
@@ -59,12 +59,42 @@ class LoginSerializer(serializers.Serializer):
 
 class FarmerProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name', allow_blank=True, required=False)
+    email = serializers.EmailField(source='user.email')
+    phone = serializers.CharField(source='user.phone')
     # will add the average_rating later after building the rating model
     # average_rating = serializers.ModelField(read_only=True)
     class Meta:
         model = FarmerProfile
-        fields = ['id','user','gender','location','picture','created_at','updated_at']
+        fields = [
+            'id',
+            'user',
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'gender',
+            'location',
+            'picture',
+            'created_at',
+            'updated_at'
+        ]
         read_only_fields = ['created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        user = instance.user
+        for attr, value in user_data.items():
+            setattr(user, attr, value)
+        user.save()
+
+        return instance
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
@@ -105,6 +135,25 @@ class FarmerRatingSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError('Rating must be between 1 and 5')
         return value
+
+
+class FarmerCertificationSerializer(serializers.ModelSerializer):
+    certificate_name = serializers.CharField(source='title')
+
+    class Meta:
+        model = FarmerCertification
+        fields = [
+            'id',
+            'farmer',
+            'certificate_name',
+            'issued_by',
+            'issued_date',
+            'certificate_image',
+            'is_verified',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['farmer', 'is_verified', 'created_at', 'updated_at']
 
 
 class ForgotPasswordSerializer(serializers.Serializer):
