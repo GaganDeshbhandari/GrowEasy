@@ -41,7 +41,7 @@ const ProductDetail = () => {
     setCartSuccess(false);
     try {
       await api.post("/orders/cart/items/", {
-        product: product.id,
+        product_id: product.id,
         quantity: quantity,
       });
       setCartSuccess(true);
