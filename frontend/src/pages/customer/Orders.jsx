@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
-
-const BASE_URL = "http://localhost:8000";
 const DEFAULT_PAGE_SIZE = 12;
 
 const statusStyles = {
@@ -94,7 +92,7 @@ const Orders = () => {
       const primary = images.find((img) => img.is_primary) || images[0];
 
       if (primary?.image) {
-        nextThumbs[productId] = `${BASE_URL}${primary.image}`;
+        nextThumbs[productId] = `${api.defaults.baseURL}${primary.image}`;
       }
     });
 

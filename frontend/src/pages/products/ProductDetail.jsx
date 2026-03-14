@@ -3,8 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 
-const BASE_URL = "http://localhost:8000";
-
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -54,7 +52,7 @@ const ProductDetail = () => {
     }
   };
 
-  const getImageUrl = (img) => (img?.image ? `${BASE_URL}${img.image}` : null);
+  const getImageUrl = (img) => (img?.image ? `${api.defaults.baseURL}${img.image}` : null);
   const images = product?.images?.length > 0 ? product.images : [{ image: null, is_primary: true }];
 
   const NoImagePlaceholder = () => (

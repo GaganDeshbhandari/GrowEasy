@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
-const BASE_URL = "http://localhost:8000";
-
 const Cart = () => {
   const navigate = useNavigate();
 
@@ -60,7 +58,7 @@ const Cart = () => {
   const getPrimaryImage = (images) => {
     if (!images || images.length === 0) return null;
     const primary = images.find((img) => img.is_primary) || images[0];
-    return `${BASE_URL}${primary.image}`;
+    return `${api.defaults.baseURL}${primary.image}`;
   };
 
   // ── Loading ──
