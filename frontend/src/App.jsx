@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // --- Auth Pages ---
@@ -98,6 +99,7 @@ function App() {
           } />
 
         </Routes>
+        <Footer />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
