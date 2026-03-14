@@ -119,3 +119,35 @@ class OrderDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(customer=self.request.user.customerprofile).prefetch_related('order_items')
+
+
+# 6. CancelOrderView - PATCH cancel order if status is pending
+class CancelOrderView(generics.GenericAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated, CustomerPermission]
+
+    def patch(self, request, pk):
+        order = Order.objects.filter(
+            pk=pk,
+            customer=request.user.customerprofile
+        ).prefetch_related('order_items').first()
+
+        if not order:
+            return Response(
+                {'detail': 'Order not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if order.status != Order.Status.PENDING:
+            return Response(
+                {'detail': 'Order cannot be cancelled'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order.status = Order.Status.CANCELLED
+        order.save(update_fields=['status'])
+
+        return Response(
+            OrderSerializer(order).data,
+            status=status.HTTP_200_OK
+        )
