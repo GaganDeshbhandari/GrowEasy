@@ -17,7 +17,8 @@ urlpatterns = [
 
     # Order endpoints
     path('orders/', OrderListCreateView.as_view(), name='order-list-create'),
-    path('orders/farmer-orders', FarmerOrderListView.as_view(), name='farmer-orders'),
+    path('farmer-orders/', FarmerOrderListView.as_view(), name='farmer-orders'),
+    path('orders/farmer-orders/', FarmerOrderListView.as_view(), name='farmer-orders-legacy'),
     path('orders/<int:pk>/', OrderDetailView.as_view(), name='order-detail'),
     path('orders/<int:pk>/cancel/', CancelOrderView.as_view(), name='order-cancel'),
 ]

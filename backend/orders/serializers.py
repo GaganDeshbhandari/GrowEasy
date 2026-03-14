@@ -135,6 +135,7 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
     customer_name = serializers.SerializerMethodField()
     customer_phone = serializers.SerializerMethodField()
     customer_email = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
     order_date = serializers.SerializerMethodField()
@@ -144,6 +145,7 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
         fields = [
             'product_name',
             'quantity',
+            'unit',
             'total',
             'customer_name',
             'customer_phone',
@@ -155,6 +157,7 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'product_name',
             'quantity',
+            'unit',
             'total',
             'customer_name',
             'customer_phone',
@@ -173,6 +176,11 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
     def get_customer_email(self, obj):
         return obj.order.customer.user.email
 
+    def get_unit(self, obj):
+        if obj.product and obj.product.unit:
+            return obj.product.unit
+        return None
+
     def get_status(self, obj):
         return obj.order.status
 
@@ -187,7 +195,7 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
     }
 
     def get_order_date(self, obj):
-        return obj.created_at
+        return obj.order.created_at
 
     def get_total(self, obj):
         return obj.total

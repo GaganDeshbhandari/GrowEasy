@@ -25,6 +25,7 @@ import CustomerProfile from "./pages/customer/CustomerProfile";
 
 // --- Farmer Pages ---
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
+import FarmerOrders from "./pages/farmer/FarmerOrders";
 import AddProduct from "./pages/farmer/AddProduct";
 import EditProduct from "./pages/farmer/EditProduct";
 import FarmerProfile from "./pages/farmer/FarmerProfile";
@@ -80,6 +81,11 @@ function App() {
           <Route path="/farmer/dashboard" element={
             <ProtectedRoute allowedRole="farmer">
               <FarmerDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/farmer/orders" element={
+            <ProtectedRoute allowedRole="farmer">
+              <FarmerOrders />
             </ProtectedRoute>
           } />
           <Route path="/farmer/products/add" element={

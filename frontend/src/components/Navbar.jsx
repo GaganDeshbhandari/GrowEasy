@@ -97,6 +97,7 @@ const Navbar = () => {
             {user?.role === "farmer" && (
               <>
                 <Link to="/farmer/dashboard" className={linkClass("/farmer/dashboard")}>Dashboard</Link>
+                <Link to="/farmer/orders" className={linkClass("/farmer/orders")}>Orders</Link>
                 <Link to="/profile/farmer" className={linkClass("/profile/farmer")}>Profile</Link>
                 <button onClick={handleLogout} className="text-sm font-medium text-red-500 hover:text-red-600 transition">
                   Logout
@@ -186,6 +187,7 @@ const Navbar = () => {
           {user?.role === "farmer" && (
             <>
               <Link to="/farmer/dashboard" className="block text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600">Dashboard</Link>
+              <Link to="/farmer/orders" className="block text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600">Orders</Link>
               <Link to="/profile/farmer" className="block text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-green-600">Profile</Link>
               <button onClick={handleLogout} className="block w-full text-left text-sm font-medium text-red-500 hover:text-red-600">Logout</button>
             </>
