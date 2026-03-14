@@ -1,14 +1,15 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from accounts.permissions import CustomerPermission
+from accounts.permissions import CustomerPermission, FarmerPermission
 from .models import Cart, CartItem, Order, OrderItem
 from .serializers import (
     CartSerializer,
     CartItemSerializer,
     CartItemWriteSerializer,
     OrderSerializer,
-    OrderWriteSerializer
+    OrderWriteSerializer,
+    FarmerOrderItemSerializer
 )
 
 
@@ -151,3 +152,11 @@ class CancelOrderView(generics.GenericAPIView):
             OrderSerializer(order).data,
             status=status.HTTP_200_OK
         )
+
+class FarmerOrderListView(generics.ListAPIView):
+    serializer_class = FarmerOrderItemSerializer
+    permission_classes = [IsAuthenticated, FarmerPermission]
+
+    def get_queryset(self):
+        farmer_profile = self.request.user.farmerprofile
+        return OrderItem.objects.filter(product__farmer=farmer_profile)
