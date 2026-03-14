@@ -19,6 +19,7 @@ import ProductDetail from "./pages/products/ProductDetail";
 import Cart from "./pages/customer/Cart";
 import Checkout from "./pages/customer/Checkout";
 import Orders from "./pages/customer/Orders";
+import OrderDetail from "./pages/customer/OrderDetail";
 import CustomerProfile from "./pages/customer/CustomerProfile";
 
 // --- Farmer Pages ---
@@ -61,6 +62,11 @@ function App() {
           <Route path="/orders" element={
             <ProtectedRoute allowedRole="customer">
               <Orders />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders/:id" element={
+            <ProtectedRoute allowedRole="customer">
+              <OrderDetail />
             </ProtectedRoute>
           } />
           <Route path="/profile/customer" element={
