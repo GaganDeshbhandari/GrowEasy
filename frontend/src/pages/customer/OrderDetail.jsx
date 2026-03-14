@@ -18,6 +18,9 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [showCancelPopup, setShowCancelPopup] = useState(false);
 
   const fetchOrder = async () => {
     try {
@@ -47,6 +50,28 @@ const OrderDetail = () => {
   useEffect(() => {
     fetchOrder();
   }, [id]);
+
+  const handleCancelOrder = async () => {
+    try {
+      setCancelling(true);
+      setCancelError("");
+
+      let response;
+      try {
+        response = await api.patch(`/orders/${id}/cancel/`);
+      } catch {
+        response = await api.patch(`/orders/orders/${id}/cancel/`);
+      }
+
+      setOrder(response.data);
+      setShowCancelPopup(false);
+    } catch (err) {
+      const message = err?.response?.data?.detail || "Failed to cancel order. Please try again.";
+      setCancelError(message);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const statusClass = (status) =>
     statusStyles[status] || "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200";
@@ -112,6 +137,7 @@ const OrderDetail = () => {
   const items = order.order_items || [];
 
   return (
+    <>
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Order Details</h1>
@@ -124,6 +150,12 @@ const OrderDetail = () => {
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+        {cancelError && (
+          <div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
+            {cancelError}
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Order ID</p>
@@ -140,6 +172,18 @@ const OrderDetail = () => {
             </span>
           </div>
         </div>
+
+        {order.status === "pending" && (
+          <div className="mt-5">
+            <button
+              onClick={() => setShowCancelPopup(true)}
+              disabled={cancelling}
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
+            >
+              {cancelling ? "Cancelling..." : "Cancel Order"}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
@@ -190,6 +234,32 @@ const OrderDetail = () => {
         </div>
       </div>
     </div>
+    {showCancelPopup && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-xl">
+          <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">Cancel Order</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">Are you sure you want to cancel this order?</p>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => setShowCancelPopup(false)}
+              disabled={cancelling}
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-200 disabled:opacity-60"
+            >
+              Keep Order
+            </button>
+            <button
+              onClick={handleCancelOrder}
+              disabled={cancelling}
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-60"
+            >
+              {cancelling ? "Cancelling..." : "Yes, Cancel"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
