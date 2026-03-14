@@ -1,13 +1,22 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from accounts.permissions import FarmerPermission
-from .models import Product
-from .serializers import ProductReadSerializer, ProductWriteSerializer
+from .models import Product, ProductCategory
+from .serializers import ProductReadSerializer, ProductWriteSerializer, ProductCategorySerializer
 
 
 # 1. ProductListCreateView - List all products and create new product
 class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.filter(is_active=True).select_related('farmer').prefetch_related('images', 'categories')
+
+    def get_queryset(self):
+        queryset = Product.objects.filter(is_active=True).select_related('farmer').prefetch_related('images', 'categories')
+
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(categories__id=category_id)
+
+        return queryset.distinct()
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -52,3 +61,11 @@ class FarmerProductListView(generics.ListAPIView):
         return Product.objects.filter(
             farmer=self.request.user.farmerprofile
         ).select_related('farmer').prefetch_related('images', 'categories')
+
+
+# 4. ProductCategoryListView - Public list of all categories (no pagination)
+class ProductCategoryListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ProductCategorySerializer
+    pagination_class = None
+    queryset = ProductCategory.objects.all().order_by('name')

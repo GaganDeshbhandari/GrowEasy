@@ -6,6 +6,7 @@ const ProductList = () => {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [count, setCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -13,13 +14,23 @@ const ProductList = () => {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/products/categories/");
+      setCategories(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setCategories([]);
+    }
+  };
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get(`/products/?page=${page}`);
+      const categoryQuery = selectedCategory !== "all" ? `&category=${selectedCategory}` : "";
+      const res = await api.get(`/products/?page=${page}${categoryQuery}`);
       const data = res.data;
       setProducts(data.results);
       setCount(data.count);
@@ -32,28 +43,28 @@ const ProductList = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     fetchProducts(currentPage);
-  }, [currentPage]);
+  }, [currentPage, selectedCategory]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedCategory]);
+  }, [search]);
 
-  const allCategories = useMemo(() => {
-    const cats = new Set();
-    products.forEach((p) => p.categories.forEach((c) => cats.add(c.name)));
-    return ["All", ...Array.from(cats).sort()];
-  }, [products]);
+  const allCategories = useMemo(
+    () => [{ id: "all", name: "All" }, ...categories],
+    [categories]
+  );
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "All" ||
-        p.categories.some((c) => c.name === selectedCategory);
-      return matchesSearch && matchesCategory;
+      return matchesSearch;
     });
-  }, [products, search, selectedCategory]);
+  }, [products, search]);
 
   const getPrimaryImage = (images) => {
     if (!images || images.length === 0) return null;
@@ -137,11 +148,15 @@ const ProductList = () => {
           <div className="relative w-full sm:w-auto">
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedCategory(value);
+                setCurrentPage(1);
+              }}
               className="w-full sm:w-auto pl-4 pr-10 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 transition cursor-pointer appearance-none shadow-sm"
             >
               {allCategories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
             <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
