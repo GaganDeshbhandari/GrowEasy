@@ -1,1 +1,1 @@
-web: gunicorn GrowEasy.wsgi
+web: gunicorn GrowEasy.wsgi --bind 0.0.0.0:$PORT
