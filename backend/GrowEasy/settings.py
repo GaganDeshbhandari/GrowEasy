@@ -174,8 +174,6 @@ if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
     CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
         "https://grow-easy-taupe.vercel.app",
     ]
 
@@ -193,6 +191,22 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# CSRF TRUSTED ORIGINS
+CSRF_TRUSTED_ORIGINS = [
+    "https://grow-easy-taupe.vercel.app"
+]
+
+
+# COOKIE SETTINGS (IMPORTANT FOR JWT AUTH)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
