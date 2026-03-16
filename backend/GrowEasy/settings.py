@@ -10,12 +10,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
 SECRET_KEY = os.environ.get("DJANGO_KEY")
+
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = [
-    "groweasy-wkir.onrender.com",
     "localhost",
     "127.0.0.1",
+    "groweasy-wkir.onrender.com",
 ]
 
 
@@ -29,7 +30,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
-    "rest_framework.authtoken",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
 
@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "orders",
-    # "farmer",
 ]
 
 
@@ -92,9 +91,7 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
-        "OPTIONS": {
-            "sslmode": "require",
-        },
+        "OPTIONS": {"sslmode": "require"} if not DEBUG else {},
     }
 }
 
@@ -143,15 +140,25 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 
-# STATIC STORAGE
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-}
+# STORAGE CONFIG
+if DEBUG:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
 
 
 # CLOUDINARY
@@ -163,17 +170,18 @@ CLOUDINARY_STORAGE = {
 
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 
-# AUTH USER MODEL
+# AUTH USER
 AUTH_USER_MODEL = "accounts.CustomUser"
 
 
@@ -186,5 +194,4 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
 
-# DEFAULT AUTO FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
