@@ -91,7 +91,7 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
-        "OPTIONS": {"sslmode": "require"} if not DEBUG else {},
+        # "OPTIONS": {"sslmode": "require"} if not DEBUG else {},
     }
 }
 
@@ -138,6 +138,9 @@ USE_TZ = True
 # STATIC FILES
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+if DEBUG:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
 # STORAGE CONFIG
@@ -202,11 +205,15 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 # COOKIE SETTINGS (IMPORTANT FOR JWT AUTH)
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-
-SESSION_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SAMESITE = "None"
-
+if DEBUG:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
+else:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SAMESITE = "None"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
