@@ -5,3 +5,7 @@ venv/
 __pycache__
 
 media/
+
+AGENTS.md
+
+.claude

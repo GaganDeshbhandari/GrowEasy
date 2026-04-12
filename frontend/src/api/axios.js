@@ -52,7 +52,7 @@ api.interceptors.response.use(
       try {
         // Call the backend refresh endpoint to get new tokens
         await axios.post(
-          "http://localhost:8000/auth/refreshToken/",
+          `${import.meta.env.VITE_API_URL}/auth/refreshToken/`,
           {},
           { withCredentials: true }
         );
