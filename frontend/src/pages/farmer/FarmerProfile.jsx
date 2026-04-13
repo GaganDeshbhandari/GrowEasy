@@ -23,6 +23,7 @@ const FarmerProfile = () => {
 		gender: "",
 		location: "",
 	});
+	const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 	const [pictureFile, setPictureFile] = useState(null);
 	const [profileSubmitting, setProfileSubmitting] = useState(false);
 	const [profileMessage, setProfileMessage] = useState("");
@@ -253,22 +254,36 @@ const FarmerProfile = () => {
 
 	if (loading) {
 		return (
-			<div className="max-w-6xl mx-auto px-4 py-10">
-				<div className="h-8 w-56 bg-gray-200 dark:bg-gray-700 rounded mb-8 animate-pulse" />
-				<div className="space-y-5">
-					<div className="h-72 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
-					<div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
+			<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 px-4 md:px-8 transition-colors duration-500">
+				<div className="max-w-4xl mx-auto space-y-8">
+					<div className="h-10 w-64 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+					<div className="space-y-6">
+						<div className="h-96 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[32px] overflow-hidden animate-pulse shadow-sm" />
+						<div className="h-64 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[32px] overflow-hidden animate-pulse shadow-sm" />
+					</div>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
-			<h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Farmer Profile</h1>
+		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
+			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+				
+                {/* Premium Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800/80 pb-8">
+					<div className="max-w-2xl">
+						<h1 className="text-4xl sm:text-5xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-2">
+							Farmer Profile
+						</h1>
+						<p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+							Manage your public identity and farm certifications.
+						</p>
+					</div>
+				</div>
 
-			<section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-				<h2 className="text-lg font-extrabold text-gray-900 dark:text-white mb-4">Profile Details</h2>
+				<section className="bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-8 sm:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+					<h2 className="text-xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-8">Profile Details</h2>
 
 				{profileMessage && (
 					<div className="mb-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm rounded-lg px-3 py-2">
@@ -282,34 +297,35 @@ const FarmerProfile = () => {
 				)}
 
 				<form onSubmit={handleSaveProfile} className="space-y-4">
-					<div className="flex flex-col sm:flex-row sm:items-center gap-5">
-						<div className="mx-auto sm:mx-0 shrink-0">
-							<div className="relative w-28 h-28 rounded-full overflow-hidden border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+					<div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
+						<div className="mx-auto sm:mx-0 shrink-0 relative">
+							<div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#1A241A] bg-emerald-50 dark:bg-emerald-900/20 shadow-lg flex items-center justify-center">
 								{profilePictureUrl ? (
 									<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
 								) : (
-									<div className="w-full h-full flex items-center justify-center text-3xl">👨‍🌾</div>
+                                    <svg className="w-12 h-12 text-emerald-300 dark:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
 								)}
-
-								<label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-black/70 hover:bg-black/80 text-white flex items-center justify-center cursor-pointer transition border border-white/30">
-									<input type="file" accept="image/*" onChange={handlePictureChange} className="hidden" />
-									<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-									</svg>
-								</label>
 							</div>
+
+                            <label className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center cursor-pointer transition-all shadow-lg ring-4 ring-white dark:ring-[#111812] hover:scale-105">
+                                <input type="file" accept="image/*" onChange={handlePictureChange} className="hidden" />
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </label>
 						</div>
 
 						<div className="flex-1 text-center sm:text-left">
-							<p className="text-sm font-semibold text-gray-900 dark:text-white">Profile Picture</p>
-							<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload a clear photo for better trust.</p>
+							<h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Profile Picture</h3>
+							<p className="text-sm text-gray-500 dark:text-gray-400">Upload a clear photo to build trust with your buyers. Max size 2MB.</p>
 							{pictureFile && (
-								<p className="mt-2 text-xs text-green-600 dark:text-green-400 font-medium">Selected: {pictureFile.name}</p>
+								<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Ready to upload: {pictureFile.name}</p>
 							)}
 						</div>
 					</div>
 
-					<div className="grid sm:grid-cols-2 gap-3">
+					<div className="grid sm:grid-cols-2 gap-5">
 						<div>
 							<input
 								type="text"
@@ -318,7 +334,7 @@ const FarmerProfile = () => {
 								onChange={handleProfileInput}
 								placeholder="First Name"
 								required
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+								className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 							/>
 							{renderProfileError("first_name")}
 						</div>
@@ -330,7 +346,7 @@ const FarmerProfile = () => {
 								value={profileForm.last_name}
 								onChange={handleProfileInput}
 								placeholder="Last Name"
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+								className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 							/>
 							{renderProfileError("last_name")}
 						</div>
@@ -343,7 +359,7 @@ const FarmerProfile = () => {
 								onChange={handleProfileInput}
 								placeholder="Email"
 								required
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+								className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 							/>
 							{renderProfileError("email")}
 						</div>
@@ -356,23 +372,69 @@ const FarmerProfile = () => {
 								onChange={handleProfileInput}
 								placeholder="Phone"
 								required
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+								className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 							/>
 							{renderProfileError("phone")}
 						</div>
 
-						<div>
-							<select
-								name="gender"
-								value={profileForm.gender}
-								onChange={handleProfileInput}
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-							>
-								<option value="">Select Gender</option>
-								<option value="male">male</option>
-								<option value="female">female</option>
-								<option value="other">other</option>
-							</select>
+						{/* Custom Gender Dropdown */}
+						<div className="relative block cursor-pointer">
+                            {isGenderDropdownOpen && (
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setIsGenderDropdownOpen(false)}
+                                />
+                            )}
+                            <button 
+                                type="button"
+                                onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
+                                className={`relative z-50 w-full flex items-center justify-between px-5 py-4 border rounded-2xl transition-all outline-none text-left font-medium ${
+                                    isGenderDropdownOpen 
+                                        ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-white dark:bg-[#111812]'
+                                        : 'border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] hover:bg-white dark:hover:bg-[#111812]'
+                                }`}
+                            >
+                                <span className={`block truncate ${!profileForm.gender ? 'text-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                    {profileForm.gender === "male" ? "Male" : 
+                                     profileForm.gender === "female" ? "Female" : 
+                                     profileForm.gender === "other" ? "Other" : "Select Gender"}
+                                </span>
+                                <div className="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
+                                    <svg className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${isGenderDropdownOpen ? 'rotate-180 text-emerald-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </button>
+
+                            <div 
+                                className={`absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 origin-top
+                                ${isGenderDropdownOpen ? 'opacity-100 scale-y-100 translate-y-0 visible' : 'opacity-0 scale-y-95 -translate-y-2 invisible'}`}
+                            >
+                                <div className="py-2 flex flex-col gap-1 px-2">
+                                    {[
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' }
+                                    ].map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => {
+                                                handleProfileInput({ target: { name: 'gender', value: option.value }});
+                                                setIsGenderDropdownOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-3 text-sm font-bold rounded-xl transition-colors
+                                                ${profileForm.gender === option.value 
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' 
+                                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200'
+                                                }
+                                            `}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 							{renderProfileError("gender")}
 						</div>
 
@@ -383,25 +445,27 @@ const FarmerProfile = () => {
 								value={profileForm.location}
 								onChange={handleProfileInput}
 								placeholder="Location"
-								className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+								className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 							/>
 							{renderProfileError("location")}
 						</div>
 					</div>
 
-					<button
-						type="submit"
-						disabled={profileSubmitting}
-						className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition"
-					>
-						{profileSubmitting ? "Saving..." : "Save Profile"}
-					</button>
+					<div className="pt-4">
+						<button
+							type="submit"
+							disabled={profileSubmitting}
+							className="bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-8 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
+						>
+							{profileSubmitting ? "Saving..." : "Save Profile Details"}
+						</button>
+					</div>
 				</form>
 			</section>
 
-			<section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-				<div className="flex items-center justify-between gap-3 mb-4">
-					<h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Certifications</h2>
+			<section className="bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-8 sm:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8">
+					<h2 className="text-xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight">Certifications</h2>
 					<button
 						type="button"
 						onClick={() => {
@@ -409,7 +473,7 @@ const FarmerProfile = () => {
 							setCertError("");
 							setCertMessage("");
 						}}
-						className="text-sm font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+						className="text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-5 py-2.5 rounded-xl transition-colors"
 					>
 						{showAddCertForm ? "Cancel" : "+ Add New Certification"}
 					</button>
@@ -427,11 +491,11 @@ const FarmerProfile = () => {
 				)}
 
 				{showAddCertForm && (
-					<form onSubmit={handleAddCertification} className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-						<h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">Add Certification</h3>
+					<form onSubmit={handleAddCertification} className="mb-8 border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] rounded-[24px] p-6 lg:p-8">
+						<h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Add Certification</h3>
 
-						<div className="grid sm:grid-cols-2 gap-3">
-							<div>
+						<div className="grid sm:grid-cols-2 gap-5">
+							<div className="sm:col-span-2">
 								<input
 									type="text"
 									name="certificate_name"
@@ -439,7 +503,7 @@ const FarmerProfile = () => {
 									onChange={handleCertInput}
 									placeholder="Certificate Name"
 									required
-									className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-white dark:bg-[#111812] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 shadow-sm"
 								/>
 								{renderCertError("certificate_name")}
 							</div>
@@ -452,7 +516,7 @@ const FarmerProfile = () => {
 									onChange={handleCertInput}
 									placeholder="Issued By"
 									required
-									className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-white dark:bg-[#111812] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 shadow-sm"
 								/>
 								{renderCertError("issued_by")}
 							</div>
@@ -471,13 +535,13 @@ const FarmerProfile = () => {
 									}}
 									placeholder="Issued Date"
 									required
-									className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-white dark:bg-[#111812] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 shadow-sm"
 								/>
 								{renderCertError("issued_date")}
 							</div>
 
-							<div>
-								<label className="block cursor-pointer rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 hover:bg-gray-100 dark:hover:bg-gray-900 px-4 py-6 text-center transition">
+							<div className="sm:col-span-2">
+								<label className="block w-full cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700/80 bg-white dark:bg-[#111812] hover:bg-gray-50 dark:hover:bg-[#1A241A] px-6 py-8 text-center transition-all group">
 									<input
 										type="file"
 										accept="image/*"
@@ -486,75 +550,103 @@ const FarmerProfile = () => {
 										className="hidden"
 									/>
 									<div className="flex flex-col items-center">
-										<svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-											<path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 014-4h.586A4 4 0 0111 9h2a4 4 0 013.414 2H17a4 4 0 010 8H7a4 4 0 01-4-4z" />
-											<path strokeLinecap="round" strokeLinejoin="round" d="M12 12v7m0-7l-3 3m3-3l3 3" />
-										</svg>
-										<p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Upload certificate image</p>
-										<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG or JPEG (clear text preferred)</p>
+										<div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                            </svg>
+                                        </div>
+										<p className="text-sm font-black text-gray-900 dark:text-white">Upload Certificate Document</p>
+										<p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">PNG, JPG or JPEG allowed (Clear text preferred)</p>
 									</div>
 								</label>
 								{certForm.certificate_image && (
-									<p className="mt-2 text-xs text-green-600 dark:text-green-400 font-medium">
-										Selected: {certForm.certificate_image.name}
+									<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">
+										Ready to upload: {certForm.certificate_image.name}
 									</p>
 								)}
 								{renderCertError("certificate_image")}
 							</div>
 						</div>
 
-						<div className="mt-4">
+						<div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800/80 flex justify-end">
 							<button
 								type="submit"
 								disabled={addingCert}
-								className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition"
+								className="bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-8 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95 w-full sm:w-auto"
 							>
-								{addingCert ? "Saving..." : "Save Certification"}
+								{addingCert ? "Uploading..." : "Save Certification"}
 							</button>
 						</div>
 					</form>
 				)}
 
 				{certifications.length === 0 ? (
-					<p className="text-sm text-gray-500 dark:text-gray-400">No certifications added yet.</p>
+					<div className="flex flex-col items-center justify-center p-12 text-center">
+                        <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No certifications yet</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">Upload verifiable credentials to increase trust with buyers</p>
+					</div>
 				) : (
-					<div className="space-y-3">
+					<div className="space-y-4">
 						{certifications.map((cert) => {
 							const imageUrl = certImageUrl(cert.certificate_image);
 
 							return (
-								<div key={cert.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-										<div className="space-y-1">
-											<p className="font-bold text-gray-900 dark:text-white">{cert.certificate_name}</p>
-											<p className="text-sm text-gray-600 dark:text-gray-300">Issued by: {cert.issued_by || "-"}</p>
-											<p className="text-sm text-gray-600 dark:text-gray-300">Issued date: {formatDate(cert.issued_date)}</p>
+								<div key={cert.id} className="border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-5 sm:p-6 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition-colors shadow-sm">
+									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+										<div className="space-y-2 flex-1">
+											<p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{cert.certificate_name}</p>
+											<div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                                    <span className="text-gray-400 dark:text-gray-500 font-normal mr-1">Issued by</span>
+                                                    {cert.issued_by || "-"}
+                                                </p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                                    <span className="text-gray-400 dark:text-gray-500 font-normal mr-1">Date</span>
+                                                    {formatDate(cert.issued_date)}
+                                                </p>
+                                            </div>
 
-											{cert.is_verified ? (
-												<span className="inline-block mt-1 text-xs font-semibold bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2.5 py-1 rounded-full">
-													Verified
-												</span>
-											) : (
-												<span className="inline-block mt-1 text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 px-2.5 py-1 rounded-full">
-													Pending Verification
-												</span>
-											)}
+											<div className="pt-2">
+                                                {cert.is_verified ? (
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-800/50">
+                                                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                                        VERIFIED
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-3 py-1.5 rounded-full border border-orange-100 dark:border-orange-800/50">
+                                                        <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
+                                                        PENDING VERIFICATION
+                                                    </span>
+                                                )}
+                                            </div>
 										</div>
 
-										<div className="flex items-start gap-3">
+										<div className="flex sm:flex-col items-center sm:items-end gap-4 sm:ml-4 shrink-0">
 											{imageUrl ? (
-												<img src={imageUrl} alt={cert.certificate_name} className="w-28 h-20 rounded-lg object-cover border border-gray-200 dark:border-gray-700" />
+												<img src={imageUrl} alt={cert.certificate_name} className="w-32 h-20 sm:w-24 sm:h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-800" />
 											) : (
-												<div className="w-28 h-20 rounded-lg bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700" />
+												<div className="w-32 h-20 sm:w-24 sm:h-16 rounded-xl bg-gray-50 dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                </div>
 											)}
 
 											<button
 												type="button"
 												onClick={() => handleDeleteCertification(cert.id)}
 												disabled={deletingCertId === cert.id}
-												className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-semibold"
+                                                className="flex items-center gap-1.5 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50 transition-colors"
 											>
-												{deletingCertId === cert.id ? "Deleting..." : "Delete"}
+												{deletingCertId === cert.id ? "Deleting..." : (
+                                                    <>
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        REMOVE
+                                                    </>
+                                                )}
 											</button>
 										</div>
 									</div>
@@ -564,6 +656,7 @@ const FarmerProfile = () => {
 					</div>
 				)}
 			</section>
+			</div>
 		</div>
 	);
 };

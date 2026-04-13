@@ -34,7 +34,7 @@ import FarmerProfile from "./pages/farmer/FarmerProfile";
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
+      {/* <AuthProvider> */}
         <BrowserRouter>
           {/* Navbar sits here so it shows on every single page */}
           <Navbar />
@@ -109,7 +109,7 @@ function App() {
         </Routes>
         <Footer />
         </BrowserRouter>
-      </AuthProvider>
+      {/* </AuthProvider> */}
     </ThemeProvider>
   );
 }
