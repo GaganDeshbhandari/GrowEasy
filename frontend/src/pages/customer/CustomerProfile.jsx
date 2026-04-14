@@ -315,16 +315,16 @@ const CustomerProfile = () => {
 				)}
 
 				<form onSubmit={handleSaveProfile} className="space-y-4">
-					<div className="flex flex-col sm:flex-row sm:items-center gap-5">
+					<div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
 						<div className="mx-auto sm:mx-0 shrink-0">
-							<div className="relative w-28 h-28 rounded-full overflow-hidden border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+							<div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg bg-gray-100 dark:bg-gray-800">
 								{profilePictureUrl ? (
 									<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
 								) : (
-									<div className="w-full h-full flex items-center justify-center text-3xl">👤</div>
+									<div className="w-full h-full flex items-center justify-center text-4xl">👤</div>
 								)}
 
-								<label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-black/70 hover:bg-black/80 text-white flex items-center justify-center cursor-pointer transition border border-white/30">
+								<label className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer transition-colors backdrop-blur-sm border border-white/20 shadow-sm">
 									<input
 										type="file"
 										accept="image/*"
@@ -339,59 +339,73 @@ const CustomerProfile = () => {
 						</div>
 
 						<div className="flex-1 text-center sm:text-left">
-							<p className="text-sm font-semibold text-gray-900 dark:text-white">Profile Picture</p>
-							<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload a square photo for best results.</p>
+							<p className="text-base font-bold text-gray-900 dark:text-white">Profile Picture</p>
+							<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload a square photo for best results.</p>
 							{pictureFile && (
-								<p className="mt-2 text-xs text-green-600 dark:text-green-400 font-medium">Selected: {pictureFile.name}</p>
+								<p className="mt-2 text-sm text-green-600 dark:text-green-400 font-semibold bg-green-50 dark:bg-green-900/30 inline-block px-3 py-1 rounded-full">Selected: {pictureFile.name}</p>
 							)}
 						</div>
 					</div>
 
-					<div className="grid sm:grid-cols-2 gap-3">
-						<input
-							type="text"
-							name="first_name"
-							value={profileForm.first_name}
-							onChange={handleProfileInput}
-							placeholder="First Name"
-							required
-							className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-						/>
-						<input
-							type="text"
-							name="last_name"
-							value={profileForm.last_name}
-							onChange={handleProfileInput}
-							placeholder="Last Name"
-							className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-						/>
-						<input
-							type="email"
-							name="email"
-							value={profileForm.email}
-							onChange={handleProfileInput}
-							placeholder="Email"
-							required
-							className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-						/>
-						<input
-							type="text"
-							name="phone"
-							value={profileForm.phone}
-							onChange={handleProfileInput}
-							placeholder="Phone"
-							required
-							className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-						/>
+					<div className="grid sm:grid-cols-2 gap-5">
+						<div className="space-y-1">
+							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
+							<input
+								type="text"
+								name="first_name"
+								value={profileForm.first_name}
+								onChange={handleProfileInput}
+								placeholder="First Name"
+								required
+								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+							/>
+						</div>
+						<div className="space-y-1">
+							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
+							<input
+								type="text"
+								name="last_name"
+								value={profileForm.last_name}
+								onChange={handleProfileInput}
+								placeholder="Last Name"
+								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+							/>
+						</div>
+						<div className="space-y-1">
+							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email Address</label>
+							<input
+								type="email"
+								name="email"
+								value={profileForm.email}
+								onChange={handleProfileInput}
+								placeholder="Email"
+								required
+								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+							/>
+						</div>
+						<div className="space-y-1">
+							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+							<input
+								type="text"
+								name="phone"
+								value={profileForm.phone}
+								onChange={handleProfileInput}
+								placeholder="Phone"
+								required
+								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+							/>
+						</div>
 					</div>
 
-					<button
-						type="submit"
-						disabled={profileSubmitting}
-						className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition"
-					>
-						{profileSubmitting ? "Saving..." : "Save Profile"}
-					</button>
+					<div className="mt-8">
+						<button
+							type="submit"
+							disabled={profileSubmitting}
+							className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-green-500/50 focus:outline-none"
+						>
+							{profileSubmitting ? "Saving..." : "Save Profile"}
+						</button>
+					</div>
 				</form>
 			</section>
 

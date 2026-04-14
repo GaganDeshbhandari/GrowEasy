@@ -47,6 +47,7 @@ const Cart = () => {
     try {
       await api.delete(`/orders/cart/items/${itemId}/`);
       await fetchCart();
+      window.dispatchEvent(new Event("cartUpdated"));
     } catch {
       setError("Failed to remove item.");
     } finally {

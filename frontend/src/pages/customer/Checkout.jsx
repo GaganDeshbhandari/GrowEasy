@@ -25,6 +25,7 @@ const Checkout = () => {
 
 	const [showAddAddress, setShowAddAddress] = useState(false);
 	const [addressForm, setAddressForm] = useState(initialAddressForm);
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
 	const [pageError, setPageError] = useState("");
 	const [addressError, setAddressError] = useState("");
@@ -248,91 +249,153 @@ const Checkout = () => {
 									</div>
 								)}
 
-								<div className="grid sm:grid-cols-2 gap-3">
-									<input
-										type="text"
-										name="full_name"
-										value={addressForm.full_name}
+								<div className="grid sm:grid-cols-2 gap-4">
+									<div className="space-y-1">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Full Name</label>
+										<input
+											type="text"
+											name="full_name"
+											value={addressForm.full_name}
+											onChange={handleAddressInput}
+											placeholder="Jane Doe"
+											required
+											className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
+										<input
+											type="text"
+											name="phone"
+											value={addressForm.phone}
+											onChange={handleAddressInput}
+											placeholder="+91 9876543210"
+											required
+											className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+										/>
+									</div>
+
+									<div className="space-y-1 relative">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Address Type</label>
+										<button
+											type="button"
+											onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+											className="w-full flex items-center justify-between px-4 py-3 text-left rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all shadow-sm"
+										>
+											<span className="capitalize">{addressForm.address_type}</span>
+											<svg
+												className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isDropdownOpen ? "rotate-180" : ""}`}
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{isDropdownOpen && (
+											<>
+												<div
+													className="fixed inset-0 z-10"
+													onClick={() => setIsDropdownOpen(false)}
+												></div>
+												<div className="absolute z-20 w-full mt-2 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+													{["home", "work", "other"].map((type) => (
+														<button
+															key={type}
+															type="button"
+															onClick={() => {
+																setAddressForm(prev => ({ ...prev, address_type: type }));
+																setIsDropdownOpen(false);
+															}}
+															className={`w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors capitalize ${
+																addressForm.address_type === type ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-gray-700 dark:text-gray-200'
+															}`}
+														>
+															{type}
+															{addressForm.address_type === type && (
+																<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+																	<path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+																</svg>
+															)}
+														</button>
+													))}
+												</div>
+											</>
+										)}
+									</div>
+									<div className="space-y-1">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Pincode</label>
+										<input
+											type="text"
+											name="pincode"
+											value={addressForm.pincode}
+											onChange={handleAddressInput}
+											placeholder="110001"
+											required
+											className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+										/>
+									</div>
+								</div>
+
+								<div className="mt-4 space-y-1">
+									<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Address Line</label>
+									<textarea
+										name="address"
+										value={addressForm.address}
 										onChange={handleAddressInput}
-										placeholder="Full Name"
+										placeholder="Street address, P.O. box, company name, c/o"
 										required
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-									/>
-									<input
-										type="text"
-										name="phone"
-										value={addressForm.phone}
-										onChange={handleAddressInput}
-										placeholder="Phone"
-										required
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-									/>
-									<select
-										name="address_type"
-										value={addressForm.address_type}
-										onChange={handleAddressInput}
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-									>
-										<option value="home">home</option>
-										<option value="work">work</option>
-										<option value="other">other</option>
-									</select>
-									<input
-										type="text"
-										name="pincode"
-										value={addressForm.pincode}
-										onChange={handleAddressInput}
-										placeholder="Pincode"
-										required
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+										rows={3}
+										className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all resize-none"
 									/>
 								</div>
 
-								<textarea
-									name="address"
-									value={addressForm.address}
-									onChange={handleAddressInput}
-									placeholder="Address Line"
-									required
-									rows={3}
-									className="mt-3 w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-								/>
-
-								<div className="grid sm:grid-cols-2 gap-3 mt-3">
-									<input
-										type="text"
-										name="city"
-										value={addressForm.city}
-										onChange={handleAddressInput}
-										placeholder="City"
-										required
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-									/>
-									<input
-										type="text"
-										name="state"
-										value={addressForm.state}
-										onChange={handleAddressInput}
-										placeholder="State"
-										required
-										className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-									/>
+								<div className="grid sm:grid-cols-2 gap-4 mt-4">
+									<div className="space-y-1">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">City</label>
+										<input
+											type="text"
+											name="city"
+											value={addressForm.city}
+											onChange={handleAddressInput}
+											placeholder="City"
+											required
+											className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">State</label>
+										<input
+											type="text"
+											name="state"
+											value={addressForm.state}
+											onChange={handleAddressInput}
+											placeholder="State"
+											required
+											className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
+										/>
+									</div>
 								</div>
 
-								<label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+								<div className="mt-5 flex items-center">
 									<input
 										type="checkbox"
+										id="is_default"
 										name="is_default"
 										checked={addressForm.is_default}
 										onChange={handleAddressInput}
+										className="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-colors cursor-pointer"
 									/>
-									Set as default address
-								</label>
+									<label htmlFor="is_default" className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+										Set as default delivery address
+									</label>
+								</div>
 
-								<div className="mt-4">
+								<div className="mt-6">
 									<button
 										type="submit"
-										className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition"
+										className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
 									>
 										Save Address
 									</button>

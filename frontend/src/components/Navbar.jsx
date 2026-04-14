@@ -23,19 +23,26 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
+  const fetchCartCount = () => {
     if (user?.role === "customer") {
       api
         .get("/orders/cart/")
-        .then((res) => {
-          const items = res.data?.items || [];
-          setCartCount(items.length);
-        })
+        .then((res) => setCartCount(res.data?.items?.length || 0))
         .catch(() => setCartCount(0));
     } else {
       setCartCount(0);
     }
+  };
+
+  useEffect(() => {
+    fetchCartCount();
   }, [user, location.pathname]);
+
+  // Listen for real-time cart updates triggered by ProductDetail
+  useEffect(() => {
+    window.addEventListener("cartUpdated", fetchCartCount);
+    return () => window.removeEventListener("cartUpdated", fetchCartCount);
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -56,6 +63,8 @@ const Navbar = () => {
         : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-gray-800/80"
     }`;
 
+  const logoLink = user?.role === "farmer" ? "/farmer/dashboard" : user?.role === "customer" ? "/products" : "/";
+
   return (
     <>
       <div className={`fixed top-0 left-0 right-0 z-[70] flex justify-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${scrolled ? "pt-3 px-3" : "pt-6 px-4 md:px-8"}`}>
@@ -64,7 +73,7 @@ const Navbar = () => {
             ${scrolled ? "rounded-full py-2.5 border border-gray-200/50 dark:border-gray-800/60" : "rounded-2xl py-3.5 border border-transparent"}`}>
             
             {/* ── Logo ── */}
-            <Link to="/" className="flex items-center gap-2.5 shrink-0 group z-10 outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500">
+            <Link to={logoLink} className="flex items-center gap-2.5 shrink-0 group z-10 outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500">
               <span className="text-2xl group-hover:rotate-[15deg] group-hover:scale-110 transition-transform duration-500 will-change-transform origin-bottom">🌱</span>
               <span className="text-xl font-bold bg-gradient-to-br from-emerald-600 to-green-500 dark:from-emerald-400 dark:to-green-300 bg-clip-text text-transparent tracking-tight leading-none">
                 GrowEasy

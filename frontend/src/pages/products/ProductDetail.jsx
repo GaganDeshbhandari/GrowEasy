@@ -43,6 +43,7 @@ const ProductDetail = () => {
         quantity: quantity,
       });
       setCartSuccess(true);
+      window.dispatchEvent(new Event("cartUpdated"));
       setTimeout(() => setCartSuccess(false), 3000);
     } catch (err) {
       const msg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0];
@@ -67,15 +68,23 @@ const ProductDetail = () => {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-10 animate-pulse">
-        <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-8" />
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/2 bg-gray-200 dark:bg-gray-700 rounded-xl h-[400px]" />
-          <div className="w-full md:w-1/2 space-y-4">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mt-6" />
-            <div className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg mt-8" />
+      <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 px-4 md:px-8 transition-colors duration-500">
+        <div className="max-w-6xl mx-auto space-y-12 mb-10">
+          <div className="h-6 w-32 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div className="flex flex-col lg:flex-row gap-12">
+            <div className="w-full lg:w-[55%]">
+                <div className="bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[32px] aspect-[4/3] w-full animate-pulse shadow-sm" />
+                <div className="flex gap-4 mt-6">
+                    <div className="w-24 h-24 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-2xl animate-pulse" />
+                    <div className="w-24 h-24 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-2xl animate-pulse" />
+                </div>
+            </div>
+            <div className="w-full lg:w-[45%] space-y-6 pt-4">
+                <div className="h-10 bg-gray-200 dark:bg-gray-800 rounded-xl w-3/4 animate-pulse" />
+                <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded-lg w-1/3 animate-pulse" />
+                <div className="h-24 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[24px] mt-8 animate-pulse shadow-sm" />
+                <div className="h-16 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[20px] mt-8 animate-pulse shadow-sm" />
+            </div>
           </div>
         </div>
       </div>
@@ -85,16 +94,22 @@ const ProductDetail = () => {
   // ── Not found ──
   if (notFound || !product) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-24 text-center">
-        <p className="text-7xl mb-6">🔍</p>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Product Not Found</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">This product may have been removed or never existed.</p>
-        <button
-          onClick={() => navigate("/products")}
-          className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg shadow-sm transition"
-        >
-          ← Back to Products
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 px-4 transition-colors duration-500">
+        <div className="max-w-lg w-full bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[32px] p-12 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
+          <div className="w-20 h-20 bg-gray-50 dark:bg-[#1A241A] rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+          </div>
+          <h2 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-3">Product Not Found</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto font-medium">This product may have been removed, or the link is broken.</p>
+          <button
+            onClick={() => navigate("/products")}
+            className="w-full bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold px-6 py-4 rounded-2xl transition-all shadow-sm active:scale-95"
+          >
+            Explore Market
+          </button>
+        </div>
       </div>
     );
   }
@@ -102,26 +117,25 @@ const ProductDetail = () => {
   const maxQty = parseFloat(product.stock);
 
   return (
-    <div className="min-h-screen transition-colors duration-300 pb-20">
-      <div className="max-w-5xl mx-auto px-4 py-10">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* ── Back button ── */}
         <button
           onClick={() => navigate("/products")}
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors mb-8 group"
+          className="inline-flex items-center gap-2 text-[13px] font-extrabold text-gray-500 dark:text-gray-400 hover:text-[#111812] dark:hover:text-emerald-400 tracking-widest uppercase transition-colors mb-10 group"
         >
-          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          <svg className="w-5 h-5 group-hover:-translate-x-1.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Back to Products
+          BACK TO MARKET
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm dark:shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
-          <div className="flex flex-col md:flex-row">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
 
             {/* ── LEFT: Image Gallery ── */}
-            <div className="w-full md:w-1/2 p-6 lg:p-8 space-y-4">
-              <div className="rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[4/3] border border-gray-100 dark:border-gray-700">
+            <div className="w-full lg:w-[55%] space-y-6">
+              <div className="rounded-[32px] overflow-hidden bg-white dark:bg-[#111812] aspect-[4/3] border border-gray-100 dark:border-gray-800/80 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
                 {getImageUrl(images[activeImageIndex]) ? (
                   <img
                     src={getImageUrl(images[activeImageIndex])}
@@ -135,15 +149,15 @@ const ProductDetail = () => {
               </div>
 
               {images.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
+                <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x">
                   {images.map((img, i) => (
                     <button
                       key={i}
                       onClick={() => setActiveImageIndex(i)}
-                      className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all snap-start ${
                         i === activeImageIndex
-                          ? "border-green-500 opacity-100 shadow-md"
-                          : "border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-100"
+                          ? "border-emerald-500 opacity-100 ring-4 ring-emerald-500/20"
+                          : "border-gray-200 dark:border-gray-800/80 opacity-60 hover:opacity-100 hover:border-gray-300 dark:hover:border-gray-700"
                       }`}
                     >
                       {getImageUrl(img) ? (
@@ -154,7 +168,7 @@ const ProductDetail = () => {
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500">
+                        <div className="w-full h-full bg-gray-50 dark:bg-[#1A241A] flex items-center justify-center text-gray-400 dark:text-gray-500">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                           </svg>
@@ -167,63 +181,64 @@ const ProductDetail = () => {
             </div>
 
             {/* ── RIGHT: Product Info ── */}
-            <div className="w-full md:w-1/2 p-6 lg:p-8 md:border-l border-gray-100 dark:border-gray-700 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-900/50">
-
-              <div className="mb-6">
+            <div className="w-full lg:w-[45%] space-y-8">
+              
+              <div className="space-y-4">
                 {product.categories.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="flex flex-wrap gap-2 mb-2">
                     {product.categories.map((cat) => (
-                      <span key={cat.id} className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-green-200 dark:border-green-800">
+                      <span key={cat.id} className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-emerald-200/50 dark:border-emerald-800/50">
                         {cat.name}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight mb-2">
+                <h1 className="text-4xl lg:text-5xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight leading-[1.1]">
                   {product.name}
                 </h1>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Freshly harvested by {product.farmer_id ? (
+                <p className="text-base text-gray-500 dark:text-gray-400 font-medium">
+                  Freshly harvested by {" "}
+                  {product.farmer_id ? (
                     <button
                       type="button"
                       onClick={() => navigate(`/farmers/${product.farmer_id}`)}
-                      className="font-bold text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 hover:underline"
+                      className="font-bold text-[#111812] dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-300 underline underline-offset-4 decoration-2 decoration-emerald-500/30 hover:decoration-emerald-500 transition-all"
                     >
                       {product.farmer}
                     </button>
                   ) : (
-                    <span className="font-bold text-gray-700 dark:text-gray-200">{product.farmer}</span>
+                    <span className="font-bold text-[#111812] dark:text-[#E8F3EB]">{product.farmer}</span>
                   )}
                 </p>
               </div>
 
-              {/* Price & Stock */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+              {/* Price & Stock Container */}
+              <div className="bg-white dark:bg-[#111812] rounded-[24px] p-6 lg:p-8 border border-gray-100 dark:border-gray-800/60 shadow-[0_4px_20px_rgb(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Price</p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-black text-green-600 dark:text-green-400">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Market Price</p>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-black text-[#111812] dark:text-emerald-400">
                       ₹{parseFloat(product.price).toFixed(2)}
                     </span>
-                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <span className="text-lg font-bold text-gray-400 dark:text-gray-500">
                       / {product.unit}
                     </span>
                   </div>
                 </div>
 
-                <div className="h-10 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+                <div className="h-16 w-px bg-gray-100 dark:bg-gray-800/60 hidden sm:block" />
 
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Availability</p>
-                  <span className={`inline-flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-lg border ${
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Availability</p>
+                  <span className={`inline-flex items-center gap-2.5 text-sm font-black px-4 py-2 rounded-xl border ${
                     maxQty > 0
-                      ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800"
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50"
+                      : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200/50 dark:border-red-800/50"
                   }`}>
-                    <span className={`w-2 h-2 rounded-full animate-pulse ${maxQty > 0 ? "bg-green-500" : "bg-red-500"}`} />
-                    {maxQty > 0 ? `${product.stock} ${product.unit} in stock` : "Sold out"}
+                    <span className={`w-2 h-2 rounded-full font-black ${maxQty > 0 ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                    {maxQty > 0 ? `${product.stock} ${product.unit} left` : "Out of stock"}
                   </span>
                 </div>
               </div>
@@ -231,20 +246,20 @@ const ProductDetail = () => {
               {/* ── Add to Cart (customer only) ── */}
               {user?.role === "customer" && maxQty > 0 && (
                 <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4 lg:gap-5">
                     {/* Quantity selector */}
-                    <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm p-1">
+                    <div className="flex items-center bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[20px] shadow-sm p-1.5 shrink-0">
                       <button
                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        className="w-10 h-10 flex items-center justify-center rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium"
                       >−</button>
-                      <div className="w-14 flex flex-col items-center justify-center">
-                        <span className="text-base font-bold text-gray-900 dark:text-white">{quantity}</span>
-                        <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">{product.unit}</span>
+                      <div className="w-16 flex flex-col items-center justify-center">
+                        <span className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] leading-none">{quantity}</span>
+                        <span className="text-[10px] uppercase font-black text-gray-400 dark:text-gray-500 mt-1">{product.unit}</span>
                       </div>
                       <button
                         onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-                        className="w-10 h-10 flex items-center justify-center rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                        className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium"
                       >+</button>
                     </div>
 
@@ -252,7 +267,7 @@ const ProductDetail = () => {
                     <button
                       onClick={handleAddToCart}
                       disabled={cartLoading}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-lg py-3 px-6 rounded-lg shadow-sm transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                      className="flex-1 bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 active:scale-[0.98] text-white font-black text-lg py-4 px-8 rounded-[20px] shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                     >
                       {cartLoading ? (
                         <>
@@ -262,18 +277,27 @@ const ProductDetail = () => {
                           </svg>
                           Adding...
                         </>
-                      ) : "🛒 Add to Cart"}
+                      ) : (
+                          <>
+                            <svg className="w-5 h-5 group-hover:-translate-y-0.5 group-hover:rotate-[-5deg] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Add to Cart
+                          </>
+                      )}
                     </button>
                   </div>
 
                   {cartSuccess && (
-                    <div className="flex items-center gap-3 text-green-700 dark:text-green-400 text-sm font-semibold bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3">
-                      ✅ Successfully added to your cart!
+                    <div className="flex justify-center items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 rounded-[16px] px-5 py-3 animate-fade-in">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                      Added to your cart!
                     </div>
                   )}
                   {cartError && (
-                    <div className="flex items-center gap-3 text-red-700 dark:text-red-400 text-sm font-semibold bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
-                      ❌ {cartError}
+                    <div className="flex justify-center items-center gap-2 text-red-700 dark:text-red-400 text-sm font-bold bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50 rounded-[16px] px-5 py-3 animate-fade-in">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      {cartError}
                     </div>
                   )}
                 </div>
@@ -281,25 +305,31 @@ const ProductDetail = () => {
 
               {/* Not logged in prompt */}
               {!user && (
-                <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center shadow-sm">
-                  <p className="text-gray-600 dark:text-gray-300 font-medium mb-3">Want to buy this fresh product?</p>
-                  <div className="flex items-center justify-center gap-3">
-                    <Link to="/login" className="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition border border-gray-200 dark:border-gray-600">Sign In</Link>
-                    <span className="text-gray-400 text-sm">or</span>
-                    <Link to="/register" className="text-green-600 dark:text-green-400 font-bold hover:underline">Create Account</Link>
+                <div className="bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[24px] p-8 text-center shadow-sm">
+                  <p className="text-[#111812] dark:text-[#E8F3EB] text-lg font-bold mb-4">Want to buy this fresh product?</p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Link to="/login" className="w-full sm:w-auto px-8 py-3 bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-sm active:scale-95">Sign In</Link>
+                    <span className="text-gray-400 text-sm font-medium">or</span>
+                    <Link to="/register" className="w-full sm:w-auto px-8 py-3 bg-white dark:bg-[#1A241A] text-[#111812] dark:text-white font-bold rounded-xl border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all active:scale-95">Create Account</Link>
                   </div>
                 </div>
               )}
 
               {/* ── Reviews placeholder ── */}
-              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Customer Reviews</h3>
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-700 text-center">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Reviews for this product are coming soon.</p>
+              <div className="pt-8">
+                <h3 className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                    Customer Reviews
+                </h3>
+                <div className="bg-white dark:bg-[#111812] rounded-[24px] p-8 border border-gray-100 dark:border-gray-800/60 text-center shadow-sm">
+                  <div className="w-12 h-12 bg-gray-50 dark:bg-[#1A241A] rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                  </div>
+                  <p className="text-sm font-bold text-gray-500 dark:text-gray-400">Reviews for this product are coming soon.</p>
                 </div>
               </div>
+
             </div>
-          </div>
         </div>
       </div>
     </div>
