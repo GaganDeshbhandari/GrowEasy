@@ -66,6 +66,9 @@ api.interceptors.response.use(
         // Refresh failed — reject all queued requests
         processQueue(refreshError);
 
+        // Clear persisted UI session snapshot.
+        localStorage.removeItem("groweasy_user");
+
         // Redirect to login page (user's session is fully expired)
         window.location.href = "/login";
 
