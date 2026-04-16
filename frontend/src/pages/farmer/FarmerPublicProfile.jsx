@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 const FarmerPublicProfile = () => {
   const { id } = useParams();
@@ -38,9 +39,7 @@ const FarmerPublicProfile = () => {
   }, [id]);
 
   const profileImageUrl = useMemo(() => {
-    if (!farmer?.picture) return null;
-    if (String(farmer.picture).startsWith("http")) return farmer.picture;
-    return `${api.defaults.baseURL}${farmer.picture}`;
+    return resolveMediaUrl(farmer?.picture);
   }, [farmer]);
 
   const ratingValue = Number(farmer?.avg_rating || 0);

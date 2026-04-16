@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ const Cart = () => {
   const getPrimaryImage = (images) => {
     if (!images || images.length === 0) return null;
     const primary = images.find((img) => img.is_primary) || images[0];
-    return `${api.defaults.baseURL}${primary.image}`;
+    return resolveMediaUrl(primary?.image);
   };
 
   // ── Loading ──

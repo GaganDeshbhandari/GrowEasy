@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 // Using Heroicons for a premium SaaS look
 import { 
@@ -226,9 +227,7 @@ const EditProduct = () => {
 	};
 
 	const getExistingImageUrl = (imagePath) => {
-		if (!imagePath) return null;
-		if (String(imagePath).startsWith("http")) return imagePath;
-		return `${api.defaults.baseURL}${imagePath}`;
+		return resolveMediaUrl(imagePath);
 	};
 
 	const handleSubmit = async (e) => {

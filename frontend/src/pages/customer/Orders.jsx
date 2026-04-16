@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 import { 
     ClockIcon as ClockSolid, 
@@ -147,7 +148,7 @@ const Orders = () => {
 			const primary = images.find((img) => img.is_primary) || images[0];
 
 			if (primary?.image) {
-				nextThumbs[productId] = `${api.defaults.baseURL}${primary.image}`;
+				nextThumbs[productId] = resolveMediaUrl(primary.image);
 			}
 		});
 

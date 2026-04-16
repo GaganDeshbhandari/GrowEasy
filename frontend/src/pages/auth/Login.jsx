@@ -49,7 +49,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 font-sans">
-      
+
       {/* Left: Visual Area */}
       <div className="relative w-full md:w-5/12 lg:w-1/2 min-h-[35vh] md:min-h-screen flex flex-col justify-between p-8 md:p-12 lg:p-16 overflow-hidden bg-[#061A10] border-b md:border-b-0 md:border-r border-emerald-900/30">
         {/* Abstract Dark Organic Elements */}
@@ -60,7 +60,7 @@ const Login = () => {
           {/* Noise texture for premium tactile feel */}
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')"}}></div>
         </div>
-        
+
         <div className="relative z-10 flex">
           <Link to="/" className="inline-flex items-center gap-3 group">
             <span className="text-4xl filter drop-shadow group-hover:scale-110 transition-transform origin-bottom duration-300">🌱</span>
@@ -82,14 +82,14 @@ const Login = () => {
       {/* Right: Form Area */}
       <div className="flex-1 flex flex-col justify-center px-6 py-16 md:py-0 relative z-10">
         <div className="w-full max-w-sm mx-auto">
-          
+
           <div className="mb-12">
             <h1 className="text-3xl font-extrabold text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-3">Welcome back</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Please enter your details to sign in.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+
             {state?.passwordReset && (
               <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30 rounded-xl text-emerald-800 dark:text-emerald-400 text-sm font-medium flex items-start gap-3">
                 <span className="text-emerald-600 dark:text-emerald-500 mt-0.5">✓</span>
@@ -105,45 +105,43 @@ const Login = () => {
             )}
 
             <div className="space-y-8 mt-4">
-              <div className="relative group">
+              <div className="relative group mt-4">
                 <input
                   type="email"
                   name="email"
                   id="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="name@example.com"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label 
+                <label
                   htmlFor="email"
-                  className="absolute left-0 top-2.5 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] 
-                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 
-                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium
-                             -top-4 text-xs"
+                  className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0]
+                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500
+                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400"
                 >
                   Email Address
                 </label>
               </div>
 
-              <div className="relative group">
+              <div className="relative group mt-4">
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Password"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 pr-10 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 pr-10 text-gray-900 dark:text-white focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label 
+                <label
                   htmlFor="password"
-                  className="absolute left-0 top-2.5 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] 
-                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 
-                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium
-                             -top-4 text-xs"
+                  className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0]
+                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500
+                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400"
                 >
                   Password
                 </label>

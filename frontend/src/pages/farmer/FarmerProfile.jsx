@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { resolveMediaUrl } from "../../utils/media";
 
 const emptyCertificationForm = {
 	certificate_name: "",
@@ -77,9 +78,7 @@ const FarmerProfile = () => {
 	}, []);
 
 	const profilePictureUrl = useMemo(() => {
-		if (!profile?.picture) return null;
-		if (String(profile.picture).startsWith("http")) return profile.picture;
-		return `${api.defaults.baseURL}${profile.picture}`;
+		return resolveMediaUrl(profile?.picture);
 	}, [profile]);
 
 	const handleProfileInput = (e) => {
@@ -228,9 +227,7 @@ const FarmerProfile = () => {
 	};
 
 	const certImageUrl = (path) => {
-		if (!path) return null;
-		if (String(path).startsWith("http")) return path;
-		return `${api.defaults.baseURL}${path}`;
+		return resolveMediaUrl(path);
 	};
 
 	const formatDate = (value) => {

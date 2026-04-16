@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ const ProductList = () => {
   const getPrimaryImage = (images) => {
     if (!images || images.length === 0) return null;
     const primary = images.find((img) => img.is_primary) || images[0];
-    return `${api.defaults.baseURL}${primary.image}`;
+    return resolveMediaUrl(primary?.image);
   };
 
   const handlePageChange = (page) => {

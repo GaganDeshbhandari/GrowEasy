@@ -1,5 +1,7 @@
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 from accounts.permissions import FarmerPermission
 from .models import Product, ProductCategory
 from .serializers import ProductReadSerializer, ProductWriteSerializer, ProductCategorySerializer
@@ -49,6 +51,27 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Product.objects.select_related('farmer').prefetch_related('images', 'categories')
         # Only allow farmer to update/delete their own products
         return Product.objects.filter(farmer=self.request.user.farmerprofile)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # Use write serializer for validation/update logic.
+        write_serializer = ProductWriteSerializer(
+            instance,
+            data=request.data,
+            partial=partial,
+            context=self.get_serializer_context(),
+        )
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_update(write_serializer)
+
+        # Always return the full read representation for API consistency.
+        read_serializer = ProductReadSerializer(
+            instance,
+            context=self.get_serializer_context(),
+        )
+        return Response(read_serializer.data, status=status.HTTP_200_OK)
 
 
 # 3. FarmerProductListView - List products for the logged-in farmer

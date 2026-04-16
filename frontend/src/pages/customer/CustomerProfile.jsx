@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { resolveMediaUrl } from "../../utils/media";
 
 const emptyAddressForm = {
 	address_type: "home",
@@ -55,7 +56,12 @@ const CustomerProfile = () => {
 			]);
 
 			const profileData = profileRes.data;
-			const addressList = Array.isArray(addressRes.data) ? addressRes.data : [];
+			const addressPayload = addressRes.data;
+			const addressList = Array.isArray(addressPayload)
+				? addressPayload
+				: Array.isArray(addressPayload?.results)
+					? addressPayload.results
+					: [];
 
 			setProfile(profileData);
 			setAddresses(addressList);
@@ -77,9 +83,7 @@ const CustomerProfile = () => {
 	}, []);
 
 	const profilePictureUrl = useMemo(() => {
-		if (!profile?.picture) return null;
-		if (String(profile.picture).startsWith("http")) return profile.picture;
-		return `${api.defaults.baseURL}${profile.picture}`;
+		return resolveMediaUrl(profile?.picture);
 	}, [profile]);
 
 	const handleProfileInput = (e) => {
@@ -297,273 +301,284 @@ const CustomerProfile = () => {
 	}
 
 	return (
-		<div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
-			<h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">My Profile</h1>
-
-			<section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-				<h2 className="text-lg font-extrabold text-gray-900 dark:text-white mb-4">Profile Details</h2>
-
-				{profileMessage && (
-					<div className="mb-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm rounded-lg px-3 py-2">
-						{profileMessage}
+		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
+			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+				<div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800/80 pb-8">
+					<div className="max-w-2xl">
+						<h1 className="text-4xl sm:text-5xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-2">My Profile</h1>
+						<p className="text-gray-500 dark:text-gray-400 text-lg font-medium">Manage your personal details and saved addresses.</p>
 					</div>
-				)}
-				{profileError && (
-					<div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
-						{profileError}
-					</div>
-				)}
+				</div>
 
-				<form onSubmit={handleSaveProfile} className="space-y-4">
-					<div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
-						<div className="mx-auto sm:mx-0 shrink-0">
-							<div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg bg-gray-100 dark:bg-gray-800">
-								{profilePictureUrl ? (
-									<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
-								) : (
-									<div className="w-full h-full flex items-center justify-center text-4xl">👤</div>
-								)}
+				<section className="bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-8 sm:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+					<h2 className="text-xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-8">Profile Details</h2>
 
-								<label className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer transition-colors backdrop-blur-sm border border-white/20 shadow-sm">
+					{profileMessage && (
+						<div className="mb-8 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm font-medium rounded-2xl px-5 py-4">
+							{profileMessage}
+						</div>
+					)}
+					{profileError && (
+						<div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm font-medium rounded-2xl px-5 py-4">
+							{profileError}
+						</div>
+					)}
+
+					<form onSubmit={handleSaveProfile} className="space-y-6">
+						<div className="flex flex-col sm:flex-row sm:items-center gap-8 mb-10">
+							<div className="mx-auto sm:mx-0 shrink-0 relative">
+								<div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#1A241A] bg-emerald-50 dark:bg-emerald-900/20 shadow-lg flex items-center justify-center">
+									{profilePictureUrl ? (
+										<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
+									) : (
+										<svg className="w-12 h-12 text-emerald-300 dark:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+										</svg>
+									)}
+								</div>
+
+								<label className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center cursor-pointer transition-all shadow-lg ring-4 ring-white dark:ring-[#111812] hover:scale-105">
 									<input
 										type="file"
 										accept="image/*"
 										onChange={handleProfilePicture}
 										className="hidden"
 									/>
-									<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+									<svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+										<path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+										<path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
 									</svg>
 								</label>
 							</div>
+
+							<div className="flex-1 text-center sm:text-left">
+								<p className="text-lg font-bold text-[#111812] dark:text-[#E8F3EB]">Profile Picture</p>
+								<p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Upload a high-res photo for best results.</p>
+								{pictureFile && (
+									<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Selected: {pictureFile.name}</p>
+								)}
+							</div>
 						</div>
 
-						<div className="flex-1 text-center sm:text-left">
-							<p className="text-base font-bold text-gray-900 dark:text-white">Profile Picture</p>
-							<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Upload a square photo for best results.</p>
-							{pictureFile && (
-								<p className="mt-2 text-sm text-green-600 dark:text-green-400 font-semibold bg-green-50 dark:bg-green-900/30 inline-block px-3 py-1 rounded-full">Selected: {pictureFile.name}</p>
-							)}
+						<div className="grid sm:grid-cols-2 gap-5">
+							<div>
+								<input
+									type="text"
+									name="first_name"
+									value={profileForm.first_name}
+									onChange={handleProfileInput}
+									placeholder="First Name"
+									required
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
+								/>
+							</div>
+							<div>
+								<input
+									type="text"
+									name="last_name"
+									value={profileForm.last_name}
+									onChange={handleProfileInput}
+									placeholder="Last Name"
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
+								/>
+							</div>
+							<div>
+								<input
+									type="email"
+									name="email"
+									value={profileForm.email}
+									onChange={handleProfileInput}
+									placeholder="Email Address"
+									required
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
+								/>
+							</div>
+							<div>
+								<input
+									type="text"
+									name="phone"
+									value={profileForm.phone}
+									onChange={handleProfileInput}
+									placeholder="Phone"
+									required
+									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
+								/>
+							</div>
 						</div>
-					</div>
 
-					<div className="grid sm:grid-cols-2 gap-5">
-						<div className="space-y-1">
-							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">First Name</label>
-							<input
-								type="text"
-								name="first_name"
-								value={profileForm.first_name}
-								onChange={handleProfileInput}
-								placeholder="First Name"
-								required
-								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Last Name</label>
-							<input
-								type="text"
-								name="last_name"
-								value={profileForm.last_name}
-								onChange={handleProfileInput}
-								placeholder="Last Name"
-								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Email Address</label>
-							<input
-								type="email"
-								name="email"
-								value={profileForm.email}
-								onChange={handleProfileInput}
-								placeholder="Email"
-								required
-								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
-							/>
-						</div>
-						<div className="space-y-1">
-							<label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</label>
-							<input
-								type="text"
-								name="phone"
-								value={profileForm.phone}
-								onChange={handleProfileInput}
-								placeholder="Phone"
-								required
-								className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/50 shadow-sm transition-all"
-							/>
-						</div>
-					</div>
-
-					<div className="mt-8">
-						<button
-							type="submit"
-							disabled={profileSubmitting}
-							className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-green-500/50 focus:outline-none"
-						>
-							{profileSubmitting ? "Saving..." : "Save Profile"}
-						</button>
-					</div>
-				</form>
-			</section>
-
-			<section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-				<div className="flex items-center justify-between gap-3 mb-4">
-					<h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Saved Addresses</h2>
-					<button
-						type="button"
-						onClick={() => {
-							setShowAddAddress((prev) => !prev);
-							setAddressError("");
-							setAddressMessage("");
-						}}
-						className="text-sm font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-					>
-						{showAddAddress ? "Cancel" : "+ Add New Address"}
-					</button>
-				</div>
-
-				{addressMessage && (
-					<div className="mb-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm rounded-lg px-3 py-2">
-						{addressMessage}
-					</div>
-				)}
-				{addressError && (
-					<div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
-						{addressError}
-					</div>
-				)}
-
-				{addresses.length === 0 && !showAddAddress && (
-					<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">No address saved yet.</p>
-				)}
-
-				{showAddAddress && (
-					<form onSubmit={handleCreateAddress} className="mb-6 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-						<h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">Add Address</h3>
-						<div className="grid sm:grid-cols-2 gap-3">
-							<input type="text" name="full_name" value={newAddressForm.full_name} onChange={handleAddressInput(setNewAddressForm)} placeholder="Full Name" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-							<input type="text" name="phone" value={newAddressForm.phone} onChange={handleAddressInput(setNewAddressForm)} placeholder="Phone" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-							<select name="address_type" value={newAddressForm.address_type} onChange={handleAddressInput(setNewAddressForm)} className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-								<option value="home">home</option>
-								<option value="work">work</option>
-								<option value="other">other</option>
-							</select>
-							<input type="text" name="pincode" value={newAddressForm.pincode} onChange={handleAddressInput(setNewAddressForm)} placeholder="Pincode" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-						</div>
-						<textarea name="address" value={newAddressForm.address} onChange={handleAddressInput(setNewAddressForm)} placeholder="Address" required rows={3} className="mt-3 w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-						<div className="grid sm:grid-cols-2 gap-3 mt-3">
-							<input type="text" name="city" value={newAddressForm.city} onChange={handleAddressInput(setNewAddressForm)} placeholder="City" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-							<input type="text" name="state" value={newAddressForm.state} onChange={handleAddressInput(setNewAddressForm)} placeholder="State" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-						</div>
-						<label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-							<input type="checkbox" name="is_default" checked={newAddressForm.is_default} onChange={handleAddressInput(setNewAddressForm)} />
-							Set as default
-						</label>
-						<div className="mt-4">
-							<button type="submit" disabled={creatingAddress} className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-lg transition">
-								{creatingAddress ? "Saving..." : "Save Address"}
+						<div className="pt-6">
+							<button
+								type="submit"
+								disabled={profileSubmitting}
+								className="w-full sm:w-auto bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-8 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95"
+							>
+								{profileSubmitting ? "Saving..." : "Save Profile"}
 							</button>
 						</div>
 					</form>
-				)}
+				</section>
 
-				<div className="space-y-3">
-					{addresses.map((addr) => {
-						const isEditing = editingAddressId === addr.id;
-						const isUpdatingThis = updatingAddressId === addr.id;
-						const isDeletingThis = deletingAddressId === addr.id;
-						const isSettingDefaultThis = settingDefaultId === addr.id;
+				<section className="bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-8 sm:p-10 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+						<h2 className="text-xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight">Saved Addresses</h2>
+						<button
+							type="button"
+							onClick={() => {
+								setShowAddAddress((prev) => !prev);
+								setAddressError("");
+								setAddressMessage("");
+							}}
+							className="text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-5 py-2.5 rounded-xl transition-colors"
+						>
+							{showAddAddress ? "Cancel" : "+ Add New Address"}
+						</button>
+					</div>
 
-						if (isEditing) {
+					{addressMessage && (
+						<div className="mb-8 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-sm font-medium rounded-2xl px-5 py-4">
+							{addressMessage}
+						</div>
+					)}
+					{addressError && (
+						<div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm font-medium rounded-2xl px-5 py-4">
+							{addressError}
+						</div>
+					)}
+
+					{addresses.length === 0 && !showAddAddress && (
+						<div className="text-center py-10 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+							<p className="text-gray-500 dark:text-gray-400 font-medium">No addresses saved yet.</p>
+						</div>
+					)}
+
+					{showAddAddress && (
+						<form onSubmit={handleCreateAddress} className="mb-10 bg-gray-50/50 dark:bg-gray-900/20 border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-6">
+							<h3 className="text-lg font-bold text-[#111812] dark:text-white mb-5">Add Address</h3>
+							<div className="grid sm:grid-cols-2 gap-4">
+								<input type="text" name="full_name" value={newAddressForm.full_name} onChange={handleAddressInput(setNewAddressForm)} placeholder="Full Name" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+								<input type="text" name="phone" value={newAddressForm.phone} onChange={handleAddressInput(setNewAddressForm)} placeholder="Phone" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+								<select name="address_type" value={newAddressForm.address_type} onChange={handleAddressInput(setNewAddressForm)} className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400 appearance-none">
+									<option value="home">Home</option>
+									<option value="work">Work</option>
+									<option value="other">Other</option>
+								</select>
+								<input type="text" name="pincode" value={newAddressForm.pincode} onChange={handleAddressInput(setNewAddressForm)} placeholder="Pincode" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+							</div>
+							<textarea name="address" value={newAddressForm.address} onChange={handleAddressInput(setNewAddressForm)} placeholder="Address" required rows={3} className="mt-4 w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+							<div className="grid sm:grid-cols-2 gap-4 mt-4">
+								<input type="text" name="city" value={newAddressForm.city} onChange={handleAddressInput(setNewAddressForm)} placeholder="City" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+								<input type="text" name="state" value={newAddressForm.state} onChange={handleAddressInput(setNewAddressForm)} placeholder="State" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+							</div>
+							<label className="mt-5 inline-flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+								<input type="checkbox" name="is_default" checked={newAddressForm.is_default} onChange={handleAddressInput(setNewAddressForm)} className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+								Set as default address
+							</label>
+							<div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+								<button type="submit" disabled={creatingAddress} className="bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-8 py-3.5 rounded-2xl transition-all shadow-sm active:scale-95">
+									{creatingAddress ? "Saving..." : "Save Address"}
+								</button>
+							</div>
+						</form>
+					)}
+
+					<div className="space-y-4">
+						{addresses.map((addr) => {
+							const isEditing = editingAddressId === addr.id;
+							const isUpdatingThis = updatingAddressId === addr.id;
+							const isDeletingThis = deletingAddressId === addr.id;
+							const isSettingDefaultThis = settingDefaultId === addr.id;
+
+							if (isEditing) {
+								return (
+									<form key={addr.id} onSubmit={handleUpdateAddress} className="bg-gray-50/50 dark:bg-gray-900/20 border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-6">
+										<h3 className="text-lg font-bold text-[#111812] dark:text-white mb-5">Edit Address</h3>
+										<div className="grid sm:grid-cols-2 gap-4">
+											<input type="text" name="full_name" value={editAddressForm.full_name} onChange={handleAddressInput(setEditAddressForm)} placeholder="Full Name" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+											<input type="text" name="phone" value={editAddressForm.phone} onChange={handleAddressInput(setEditAddressForm)} placeholder="Phone" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+											<select name="address_type" value={editAddressForm.address_type} onChange={handleAddressInput(setEditAddressForm)} className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400 appearance-none">
+												<option value="home">Home</option>
+												<option value="work">Work</option>
+												<option value="other">Other</option>
+											</select>
+											<input type="text" name="pincode" value={editAddressForm.pincode} onChange={handleAddressInput(setEditAddressForm)} placeholder="Pincode" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+										</div>
+										<textarea name="address" value={editAddressForm.address} onChange={handleAddressInput(setEditAddressForm)} placeholder="Address" required rows={3} className="mt-4 w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+										<div className="grid sm:grid-cols-2 gap-4 mt-4">
+											<input type="text" name="city" value={editAddressForm.city} onChange={handleAddressInput(setEditAddressForm)} placeholder="City" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+											<input type="text" name="state" value={editAddressForm.state} onChange={handleAddressInput(setEditAddressForm)} placeholder="State" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
+										</div>
+										<label className="mt-5 inline-flex items-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+											<input type="checkbox" name="is_default" checked={editAddressForm.is_default} onChange={handleAddressInput(setEditAddressForm)} className="w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+											Set as default address
+										</label>
+
+										<div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800 flex items-center gap-3">
+											<button type="submit" disabled={isUpdatingThis} className="bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-6 py-3 rounded-2xl transition-all shadow-sm active:scale-95">
+												{isUpdatingThis ? "Saving..." : "Save Changes"}
+											</button>
+											<button type="button" onClick={() => setEditingAddressId(null)} className="px-6 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors">
+												Cancel
+											</button>
+										</div>
+									</form>
+								);
+							}
+
 							return (
-								<form key={addr.id} onSubmit={handleUpdateAddress} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-									<h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Edit Address</h3>
-									<div className="grid sm:grid-cols-2 gap-3">
-										<input type="text" name="full_name" value={editAddressForm.full_name} onChange={handleAddressInput(setEditAddressForm)} placeholder="Full Name" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-										<input type="text" name="phone" value={editAddressForm.phone} onChange={handleAddressInput(setEditAddressForm)} placeholder="Phone" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-										<select name="address_type" value={editAddressForm.address_type} onChange={handleAddressInput(setEditAddressForm)} className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-											<option value="home">home</option>
-											<option value="work">work</option>
-											<option value="other">other</option>
-										</select>
-										<input type="text" name="pincode" value={editAddressForm.pincode} onChange={handleAddressInput(setEditAddressForm)} placeholder="Pincode" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-									</div>
-									<textarea name="address" value={editAddressForm.address} onChange={handleAddressInput(setEditAddressForm)} placeholder="Address" required rows={3} className="mt-3 w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-									<div className="grid sm:grid-cols-2 gap-3 mt-3">
-										<input type="text" name="city" value={editAddressForm.city} onChange={handleAddressInput(setEditAddressForm)} placeholder="City" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-										<input type="text" name="state" value={editAddressForm.state} onChange={handleAddressInput(setEditAddressForm)} placeholder="State" required className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
-									</div>
-									<label className="mt-3 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-										<input type="checkbox" name="is_default" checked={editAddressForm.is_default} onChange={handleAddressInput(setEditAddressForm)} />
-										Set as default
-									</label>
+								<div key={addr.id} className="border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-5 sm:p-6 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition-colors shadow-sm">
+									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+										<div>
+											<p className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] leading-tight">
+												{addr.full_name}
+												<span className="ml-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full uppercase tracking-wider">
+													{addr.address_type}
+												</span>
+											</p>
+											<p className="text-sm font-medium text-gray-600 dark:text-gray-400 mt-2">{addr.phone}</p>
+											<p className="text-sm font-medium text-gray-600 dark:text-gray-400 mt-1">
+												{addr.address}, {addr.city}, {addr.state} - {addr.pincode}
+											</p>
+											{addr.is_default && (
+												<span className="inline-block mt-3 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
+													✓ Default Address
+												</span>
+											)}
+										</div>
 
-									<div className="mt-4 flex items-center gap-2">
-										<button type="submit" disabled={isUpdatingThis} className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg transition">
-											{isUpdatingThis ? "Saving..." : "Save Changes"}
-										</button>
-										<button type="button" onClick={() => setEditingAddressId(null)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300">
-											Cancel
-										</button>
-									</div>
-								</form>
-							);
-						}
-
-						return (
-							<div key={addr.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-								<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-									<div>
-										<p className="font-bold text-gray-900 dark:text-white">
-											{addr.full_name} ({addr.address_type})
-										</p>
-										<p className="text-sm text-gray-600 dark:text-gray-300">{addr.phone}</p>
-										<p className="text-sm text-gray-600 dark:text-gray-300">
-											{addr.address}, {addr.city}, {addr.state} - {addr.pincode}
-										</p>
-										{addr.is_default && (
-											<span className="inline-block mt-2 text-xs font-semibold text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40 px-2 py-1 rounded">
-												Default
-											</span>
-										)}
-									</div>
-
-									<div className="flex flex-wrap gap-2">
-										{!addr.is_default && (
+										<div className="flex flex-wrap gap-2">
+											{!addr.is_default && (
+												<button
+													type="button"
+													onClick={() => handleSetDefault(addr.id)}
+													disabled={isSettingDefaultThis}
+													className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 text-gray-700 dark:text-gray-300 text-sm font-bold transition-colors"
+												>
+													{isSettingDefaultThis ? "Setting..." : "Set Default"}
+												</button>
+											)}
 											<button
 												type="button"
-												onClick={() => handleSetDefault(addr.id)}
-												disabled={isSettingDefaultThis}
-												className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-semibold"
+												onClick={() => startEditAddress(addr)}
+												className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-sm font-bold transition-colors"
 											>
-												{isSettingDefaultThis ? "Setting..." : "Set Default"}
+												Edit
 											</button>
-										)}
-										<button
-											type="button"
-											onClick={() => startEditAddress(addr)}
-											className="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
-										>
-											Edit
-										</button>
-										<button
-											type="button"
-											onClick={() => handleDeleteAddress(addr.id)}
-											disabled={isDeletingThis}
-											className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-xs font-semibold"
-										>
-											{isDeletingThis ? "Deleting..." : "Delete"}
-										</button>
+											<button
+												type="button"
+												onClick={() => handleDeleteAddress(addr.id)}
+												disabled={isDeletingThis}
+												className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 disabled:opacity-60 text-red-600 dark:text-red-400 text-sm font-bold transition-colors"
+											>
+												{isDeletingThis ? "Deleting..." : "Delete"}
+											</button>
+										</div>
 									</div>
 								</div>
-							</div>
-						);
-					})}
-				</div>
-			</section>
+							);
+						})}
+					</div>
+				</section>
+			</div>
 		</div>
 	);
 };

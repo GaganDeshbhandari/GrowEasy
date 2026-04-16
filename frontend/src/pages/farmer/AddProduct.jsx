@@ -355,6 +355,7 @@ const AddProduct = () => {
                                                     return (
                                                         <label
                                                             key={cat.id}
+                                                            onClick={() => handleCategoryToggle(cat.id)}
                                                             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                                                                 isSelected 
                                                                 ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-100" 

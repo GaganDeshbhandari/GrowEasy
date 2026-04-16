@@ -211,9 +211,10 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
 class AddressListCreateView(generics.ListCreateAPIView):
   serializer_class = AddressSerializer
   permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+  pagination_class = None
 
   def get_queryset(self):
-    return Address.objects.filter(customer__user=self.request.user)
+    return Address.objects.filter(customer__user=self.request.user).order_by('-is_default', '-updated_at')
 
   def perform_create(self, serializer):
     serializer.save(customer=self.request.user.customerprofile)

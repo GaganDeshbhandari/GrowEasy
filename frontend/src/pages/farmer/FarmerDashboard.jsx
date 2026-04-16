@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 // Using Heroicons for a premium SaaS look (newly added to dependencies)
 import { PencilSquareIcon, TrashIcon, PowerIcon, PlusIcon, FaceFrownIcon } from "@heroicons/react/24/outline";
@@ -69,9 +70,7 @@ const FarmerDashboard = () => {
 	const getPrimaryImage = (images) => {
 		if (!images || images.length === 0) return null;
 		const primary = images.find((img) => img.is_primary) || images[0];
-		if (!primary?.image) return null;
-		if (String(primary.image).startsWith("http")) return primary.image;
-		return `${api.defaults.baseURL}${primary.image}`;
+		return resolveMediaUrl(primary?.image);
 	};
 
 	const handleDelete = async (productId) => {

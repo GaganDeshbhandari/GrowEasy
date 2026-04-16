@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
+import { resolveMediaUrl } from "../../utils/media";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -53,7 +54,7 @@ const ProductDetail = () => {
     }
   };
 
-  const getImageUrl = (img) => (img?.image ? `${api.defaults.baseURL}${img.image}` : null);
+  const getImageUrl = (img) => resolveMediaUrl(img?.image);
   const images = product?.images?.length > 0 ? product.images : [{ image: null, is_primary: true }];
 
   const NoImagePlaceholder = () => (

@@ -49,12 +49,17 @@ const Checkout = () => {
 				return;
 			}
 
-			const addressList = Array.isArray(addressRes.data) ? addressRes.data : [];
+			const addressPayload = addressRes.data;
+			const addressList = Array.isArray(addressPayload)
+				? addressPayload
+				: Array.isArray(addressPayload?.results)
+					? addressPayload.results
+					: [];
 			const defaultAddress = addressList.find((addr) => addr.is_default);
 
 			setCart(cartData);
 			setAddresses(addressList);
-			setSelectedAddressId(defaultAddress ? defaultAddress.id : null);
+			setSelectedAddressId(defaultAddress ? defaultAddress.id : (addressList[0]?.id ?? null));
 		} catch {
 			setPageError("Failed to load checkout details. Please try again.");
 		} finally {
