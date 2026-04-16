@@ -27,6 +27,7 @@ const CustomerProfile = () => {
 		phone: user?.phone || "",
 	});
 	const [pictureFile, setPictureFile] = useState(null);
+	const [removePicture, setRemovePicture] = useState(false);
 	const [profileSubmitting, setProfileSubmitting] = useState(false);
 	const [profileMessage, setProfileMessage] = useState("");
 	const [profileError, setProfileError] = useState("");
@@ -93,7 +94,15 @@ const CustomerProfile = () => {
 
 	const handleProfilePicture = (e) => {
 		const file = e.target.files?.[0] || null;
-		setPictureFile(file);
+		if (file) {
+			setPictureFile(file);
+			setRemovePicture(false);
+		}
+	};
+
+	const handleRemovePicture = () => {
+		setPictureFile(null);
+		setRemovePicture(true);
 	};
 
 	const handleSaveProfile = async (e) => {
@@ -111,6 +120,8 @@ const CustomerProfile = () => {
 			formData.append("phone", profileForm.phone);
 			if (pictureFile) {
 				formData.append("picture", pictureFile);
+			} else if (removePicture) {
+				formData.append("picture", "");
 			}
 
 			const res = await api.patch("/auth/customer/profile/", formData, {
@@ -121,6 +132,7 @@ const CustomerProfile = () => {
 
 			setProfile(res.data);
 			setPictureFile(null);
+			setRemovePicture(false);
 			setProfileMessage("Profile updated successfully.");
 
 			if (user) {
@@ -328,7 +340,9 @@ const CustomerProfile = () => {
 						<div className="flex flex-col sm:flex-row sm:items-center gap-8 mb-10">
 							<div className="mx-auto sm:mx-0 shrink-0 relative">
 								<div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#1A241A] bg-emerald-50 dark:bg-emerald-900/20 shadow-lg flex items-center justify-center">
-									{profilePictureUrl ? (
+									{pictureFile ? (
+										<img src={URL.createObjectURL(pictureFile)} alt="Profile" className="w-full h-full object-cover" />
+									) : profilePictureUrl && !removePicture ? (
 										<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
 									) : (
 										<svg className="w-12 h-12 text-emerald-300 dark:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,9 +368,16 @@ const CustomerProfile = () => {
 							<div className="flex-1 text-center sm:text-left">
 								<p className="text-lg font-bold text-[#111812] dark:text-[#E8F3EB]">Profile Picture</p>
 								<p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Upload a high-res photo for best results.</p>
-								{pictureFile && (
-									<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Selected: {pictureFile.name}</p>
-								)}
+								<div className="mt-4 flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+									{pictureFile && (
+										<span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Selected: {pictureFile.name}</span>
+									)}
+									{(profilePictureUrl || pictureFile) && !removePicture && (
+										<button type="button" onClick={handleRemovePicture} className="text-sm font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-4 py-2 rounded-lg transition-colors border border-red-100 dark:border-red-900/30">
+											Remove Photo
+										</button>
+									)}
+								</div>
 							</div>
 						</div>
 

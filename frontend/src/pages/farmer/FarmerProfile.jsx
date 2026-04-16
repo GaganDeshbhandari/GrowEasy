@@ -26,6 +26,7 @@ const FarmerProfile = () => {
 	});
 	const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 	const [pictureFile, setPictureFile] = useState(null);
+	const [removePicture, setRemovePicture] = useState(false);
 	const [profileSubmitting, setProfileSubmitting] = useState(false);
 	const [profileMessage, setProfileMessage] = useState("");
 	const [profileError, setProfileError] = useState("");
@@ -90,6 +91,14 @@ const FarmerProfile = () => {
 	const handlePictureChange = (e) => {
 		const file = e.target.files?.[0] || null;
 		setPictureFile(file);
+		if (file) {
+			setRemovePicture(false);
+		}
+	};
+
+	const handleRemovePicture = () => {
+		setPictureFile(null);
+		setRemovePicture(true);
 	};
 
 	const handleSaveProfile = async (e) => {
@@ -107,6 +116,8 @@ const FarmerProfile = () => {
 		payload.append("location", profileForm.location);
 		if (pictureFile) {
 			payload.append("picture", pictureFile);
+		} else if (removePicture) {
+			payload.append("picture", "");
 		}
 
 		try {
@@ -119,8 +130,7 @@ const FarmerProfile = () => {
 
 			setProfile(res.data);
 			setPictureFile(null);
-			setProfileMessage("Profile updated successfully.");
-
+					setRemovePicture(false);
 			if (user) {
 				login({
 					...user,
@@ -266,7 +276,7 @@ const FarmerProfile = () => {
 	return (
 		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
 			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-				
+
                 {/* Premium Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800/80 pb-8">
 					<div className="max-w-2xl">
@@ -297,7 +307,9 @@ const FarmerProfile = () => {
 					<div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
 						<div className="mx-auto sm:mx-0 shrink-0 relative">
 							<div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white dark:border-[#1A241A] bg-emerald-50 dark:bg-emerald-900/20 shadow-lg flex items-center justify-center">
-								{profilePictureUrl ? (
+								{pictureFile ? (
+									<img src={URL.createObjectURL(pictureFile)} alt="Profile" className="w-full h-full object-cover" />
+								) : profilePictureUrl && !removePicture ? (
 									<img src={profilePictureUrl} alt="Profile" className="w-full h-full object-cover" />
 								) : (
                                     <svg className="w-12 h-12 text-emerald-300 dark:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -316,9 +328,16 @@ const FarmerProfile = () => {
 						<div className="flex-1 text-center sm:text-left">
 							<h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Profile Picture</h3>
 							<p className="text-sm text-gray-500 dark:text-gray-400">Upload a clear photo to build trust with your buyers. Max size 2MB.</p>
-							{pictureFile && (
-								<p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Ready to upload: {pictureFile.name}</p>
-							)}
+							<div className="mt-4 flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+								{pictureFile && (
+									<span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-lg inline-block">Ready to upload: {pictureFile.name}</span>
+								)}
+								{(profilePictureUrl || pictureFile) && !removePicture && (
+									<button type="button" onClick={handleRemovePicture} className="text-sm font-bold text-red-600 dark:text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-4 py-2 rounded-lg transition-colors border border-red-100 dark:border-red-900/30">
+										Remove Photo
+									</button>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -377,23 +396,23 @@ const FarmerProfile = () => {
 						{/* Custom Gender Dropdown */}
 						<div className="relative block cursor-pointer">
                             {isGenderDropdownOpen && (
-                                <div 
-                                    className="fixed inset-0 z-40" 
+                                <div
+                                    className="fixed inset-0 z-40"
                                     onClick={() => setIsGenderDropdownOpen(false)}
                                 />
                             )}
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsGenderDropdownOpen(!isGenderDropdownOpen)}
                                 className={`relative z-50 w-full flex items-center justify-between px-5 py-4 border rounded-2xl transition-all outline-none text-left font-medium ${
-                                    isGenderDropdownOpen 
+                                    isGenderDropdownOpen
                                         ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-white dark:bg-[#111812]'
                                         : 'border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] hover:bg-white dark:hover:bg-[#111812]'
                                 }`}
                             >
                                 <span className={`block truncate ${!profileForm.gender ? 'text-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                                    {profileForm.gender === "male" ? "Male" : 
-                                     profileForm.gender === "female" ? "Female" : 
+                                    {profileForm.gender === "male" ? "Male" :
+                                     profileForm.gender === "female" ? "Female" :
                                      profileForm.gender === "other" ? "Other" : "Select Gender"}
                                 </span>
                                 <div className="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
@@ -403,7 +422,7 @@ const FarmerProfile = () => {
                                 </div>
                             </button>
 
-                            <div 
+                            <div
                                 className={`absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 origin-top
                                 ${isGenderDropdownOpen ? 'opacity-100 scale-y-100 translate-y-0 visible' : 'opacity-0 scale-y-95 -translate-y-2 invisible'}`}
                             >
@@ -421,8 +440,8 @@ const FarmerProfile = () => {
                                                 setIsGenderDropdownOpen(false);
                                             }}
                                             className={`w-full text-left px-4 py-3 text-sm font-bold rounded-xl transition-colors
-                                                ${profileForm.gender === option.value 
-                                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' 
+                                                ${profileForm.gender === option.value
+                                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                                                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200'
                                                 }
                                             `}
