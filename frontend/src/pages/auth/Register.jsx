@@ -129,11 +129,11 @@ const Register = () => {
                   id="first_name"
                   value={formData.first_name}
                   onChange={handleChange}
-                  placeholder="First Name"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="first_name" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="first_name" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   First Name
                 </label>
                 <FieldError name="first_name" />
@@ -145,11 +145,11 @@ const Register = () => {
                   id="last_name"
                   value={formData.last_name}
                   onChange={handleChange}
-                  placeholder="Last Name"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="last_name" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="last_name" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   Last Name
                 </label>
                 <FieldError name="last_name" />
@@ -164,11 +164,11 @@ const Register = () => {
                   id="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Email"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="email" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="email" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   Email Address
                 </label>
                 <FieldError name="email" />
@@ -180,11 +180,11 @@ const Register = () => {
                   id="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="Phone"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="phone" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="phone" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   Phone Number
                 </label>
                 <FieldError name="phone" />
@@ -258,11 +258,11 @@ const Register = () => {
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Password"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 pr-10 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 pr-10 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="password" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="password" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   Password
                 </label>
                 <button type="button" onClick={() => setShowPassword(!showPassword)} tabIndex={-1} className="absolute right-0 top-3 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors p-1">
@@ -277,11 +277,11 @@ const Register = () => {
                   id="confirm_password"
                   value={formData.confirm_password}
                   onChange={handleChange}
-                  placeholder="Confirm Password"
+                  placeholder=" "
                   required
-                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2 pr-10 text-gray-900 dark:text-white placeholder-transparent focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 pr-10 text-gray-900 dark:text-white  focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors"
                 />
-                <label htmlFor="confirm_password" className="absolute left-0 top-2 text-gray-400 dark:text-gray-500 text-base transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400 font-medium -top-4 text-xs">
+                <label htmlFor="confirm_password" className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0] peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500 peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400">
                   Confirm Password
                 </label>
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} tabIndex={-1} className="absolute right-0 top-3 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors p-1">

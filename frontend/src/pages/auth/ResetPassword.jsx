@@ -1,135 +1,236 @@
-import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
 const ResetPassword = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const { state } = useLocation();
-  const email = state?.email || "";
+  const email = location.state?.email || "";
 
-  const [formData, setFormData] = useState({
-    otp: "",
-    new_password: "",
-    confirm_password: "",
-  });
-
-  const [errors, setErrors] = useState({});
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors((prev) => ({ ...prev, [e.target.name]: null }));
+  const inputRefs = useRef([]);
+
+  useEffect(() => {
+    if (!email) {
+      navigate("/forgot-password");
+    }
+  }, [email, navigate]);
+
+  const handleChange = (index, value) => {
+    if (isNaN(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Focus next input
+    if (value !== "" && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    // Focus previous input on backspace
+    if (e.key === "Backspace" && index > 0 && otp[index] === "") {
+      inputRefs.current[index - 1].focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text/plain").slice(0, 6);
+    if (!/^\d+$/.test(pastedData)) return;
+
+    const newOtp = [...otp];
+    pastedData.split("").forEach((char, index) => {
+      newOtp[index] = char;
+    });
+    setOtp(newOtp);
+
+    const nextIndex = Math.min(pastedData.length, 5);
+    inputRefs.current[nextIndex].focus();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      return setError("Passwords do not match.");
+    }
+
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      return setError("Please enter a valid 6-digit OTP.");
+    }
+
     setLoading(true);
-    setErrors({});
+    setError("");
 
     try {
-      await api.post("/auth/reset-password/", formData);
-      navigate("/login", { state: { passwordReset: true } });
+      await api.post("/auth/reset-password/", {
+        email,
+        otp: otpString,
+        new_password: newPassword,
+      });
+      navigate("/login", { state: { message: "Password reset successfully. Please log in." } });
     } catch (err) {
       const data = err.response?.data;
-      if (data) {
-        setErrors(data);
+      if (data?.otp) {
+        setError(data.otp[0]);
+      } else if (data?.non_field_errors) {
+        setError(data.non_field_errors[0]);
+      } else if (data?.detail) {
+        setError(data.detail);
       } else {
-        setErrors({ non_field_errors: ["Something went wrong. Please try again."] });
+        setError("Invalid OTP or something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const FieldError = ({ name }) =>
-    errors[name] ? (
-      <p className="text-xs font-semibold text-red-500 dark:text-red-400 mt-1 ml-1">{Array.isArray(errors[name]) ? errors[name][0] : errors[name]}</p>
-    ) : null;
-
-  const inputClass = "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition";
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 font-sans">
+      
+      {/* Left: Visual Area */}
+      <div className="relative w-full md:w-5/12 lg:w-1/2 min-h-[35vh] md:min-h-screen flex flex-col justify-between p-8 md:p-12 lg:p-16 overflow-hidden bg-[#061A10] border-b md:border-b-0 md:border-r border-emerald-900/30">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#061A10] via-[#0A2617] to-[#04120B] opacity-90"></div>
+          <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] rounded-full bg-emerald-600/10 blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-20%] w-[70%] h-[70%] rounded-full bg-yellow-600/5 blur-[100px]"></div>
+          <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')"}}></div>
+        </div>
 
-      <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+        <div className="relative z-10 flex">
+          <Link to="/" className="inline-flex items-center gap-3 group">
+            <span className="text-4xl filter drop-shadow group-hover:scale-110 transition-transform origin-bottom duration-300">🌱</span>
+            <span className="text-white text-2xl font-extrabold tracking-tight">GrowEasy</span>
+          </Link>
+        </div>
 
-          <div className="px-8 pt-10 pb-6 text-center">
-            <span className="inline-block text-4xl mb-4">🔐</span>
-            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Reset Password</h1>
-            {email && (
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-                OTP sent to <span className="font-bold text-gray-700 dark:text-gray-200">{email}</span>
-              </p>
-            )}
+        <div className="relative z-10 mt-auto pb-4 pt-16">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.05] mb-6 tracking-tight">
+            Secure <br/>
+            <span className="text-emerald-400 font-serif italic font-medium tracking-normal">reset.</span>
+          </h2>
+          <p className="text-emerald-100/70 text-base md:text-lg max-w-sm font-light leading-relaxed">
+            Verify your identity with the code sent to {email}. Take back control.
+          </p>
+        </div>
+      </div>
+
+      {/* Right: Form Area */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-16 md:py-0 relative z-10">
+        <div className="w-full max-w-sm mx-auto">
+          
+          <div className="mb-12">
+            <h1 className="text-3xl font-extrabold text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-3">Reset Password</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Create a new, strong password.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="px-8 pb-8 space-y-5">
-
-            {(errors.non_field_errors || errors.detail) && (
-              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm font-medium rounded-lg px-4 py-3">
-                ⚠️ {Array.isArray(errors.non_field_errors) ? errors.non_field_errors[0] : errors.non_field_errors || errors.detail}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-xl text-red-800 dark:text-red-400 text-sm font-medium flex items-start gap-3">
+                <span className="text-red-600 dark:text-red-500 mt-0.5">!</span>
+                {error}
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">OTP Code</label>
-              <input
-                type="text"
-                name="otp"
-                value={formData.otp}
-                onChange={handleChange}
-                placeholder="Enter 6-digit OTP"
-                maxLength={6}
-                required
-                className={`${inputClass} text-lg tracking-[0.5em] text-center font-mono font-bold`}
-              />
-              <FieldError name="otp" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
-              <div className="relative">
-                <input type={showNewPassword ? "text" : "password"} name="new_password" value={formData.new_password} onChange={handleChange} placeholder="Min 8 characters" required className={`${inputClass} pr-12`} />
-                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1">
-                  {showNewPassword ? "🙈" : "👁️"}
-                </button>
+            <div className="space-y-8 mt-4">
+              
+              {/* OTP Field */}
+              <div className="space-y-3 mt-4">
+                <label className="text-sm font-bold text-[#111812] dark:text-[#E8F3EB] tracking-tight">One-Time Password (OTP)</label>
+                <div className="flex justify-between gap-2" onPaste={handlePaste}>
+                  {otp.map((data, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength="1"
+                      ref={(el) => (inputRefs.current[index] = el)}
+                      value={data}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      className="w-12 h-14 md:w-14 md:h-16 text-center text-xl font-black bg-transparent border-2 border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 focus:bg-emerald-50 dark:focus:bg-emerald-900/10 transition-colors placeholder-gray-300 dark:placeholder-gray-700"
+                      placeholder="·"
+                    />
+                  ))}
+                </div>
               </div>
-              <FieldError name="new_password" />
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Confirm Password</label>
-              <div className="relative">
-                <input type={showConfirmPassword ? "text" : "password"} name="confirm_password" value={formData.confirm_password} onChange={handleChange} placeholder="Re-enter new password" required className={`${inputClass} pr-12`} />
-                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition p-1">
-                  {showConfirmPassword ? "🙈" : "👁️"}
-                </button>
+              {/* New Password */}
+              <div className="relative group mt-8">
+                <input 
+                  type="password" 
+                  name="newPassword" 
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder=" "
+                  required
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors font-mono tracking-wider"
+                />
+                <label 
+                  htmlFor="newPassword"
+                  className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0]
+                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500
+                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400"
+                >
+                  New Password
+                </label>
               </div>
-              <FieldError name="confirm_password" />
+
+              {/* Confirm Password */}
+              <div className="relative group mt-8">
+                <input 
+                  type="password" 
+                  name="confirmPassword" 
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder=" "
+                  required
+                  className="peer w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-800 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:border-emerald-600 dark:focus:border-emerald-500 transition-colors font-mono tracking-wider"
+                />
+                <label 
+                  htmlFor="confirmPassword"
+                  className="absolute left-0 -top-4 text-xs font-medium text-emerald-600 dark:text-emerald-500 transition-all origin-[0]
+                             peer-placeholder-shown:text-base peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 dark:peer-placeholder-shown:text-gray-500
+                             peer-focus:-top-4 peer-focus:text-xs peer-focus:text-emerald-600 dark:peer-focus:text-emerald-400"
+                >
+                  Confirm Password
+                </label>
+              </div>
             </div>
 
-            <button
-              type="submit"
+            <button 
+              type="submit" 
               disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 overflow-hidden relative group mt-10"
             >
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
               {loading ? (
                 <>
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
-                  Resetting...
+                  <span>Verifying...</span>
                 </>
-              ) : "Reset Password"}
+              ) : (
+                <span>Reset Password</span>
+              )}
             </button>
 
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
-              Didn't receive the OTP?{" "}
-              <Link to="/forgot-password" className="text-green-600 dark:text-green-400 font-bold hover:underline">Resend OTP</Link>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 pt-8">
+              Back to{" "}
+              <Link to="/login" className="text-[#111812] dark:text-[#E8F3EB] font-bold hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors underline decoration-2 decoration-emerald-200 dark:decoration-emerald-900 underline-offset-4">
+                Sign in
+              </Link>
             </p>
           </form>
         </div>
