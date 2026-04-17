@@ -26,6 +26,7 @@ const CustomerProfile = () => {
 		email: user?.email || "",
 		phone: user?.phone || "",
 	});
+	// const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 	const [pictureFile, setPictureFile] = useState(null);
 	const [removePicture, setRemovePicture] = useState(false);
 	const [profileSubmitting, setProfileSubmitting] = useState(false);

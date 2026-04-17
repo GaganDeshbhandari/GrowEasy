@@ -568,7 +568,7 @@ const FarmerProfile = () => {
 				</div>
 			)}
 			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-
+			
                 {/* Premium Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800/80 pb-8">
 					<div className="max-w-2xl">
