@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { resolveMediaUrl } from "../../utils/media";
@@ -34,6 +34,10 @@ const CustomerProfile = () => {
 	const [detectedLocation, setDetectedLocation] = useState("");
 	const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 	const [locationDetectError, setLocationDetectError] = useState("");
+	const [showMapPicker, setShowMapPicker] = useState(false);
+	const [leafletReady, setLeafletReady] = useState(false);
+	const mapRef = useRef(null);
+	const mapInstanceRef = useRef(null);
 
 	const [addresses, setAddresses] = useState([]);
 	const [addressMessage, setAddressMessage] = useState("");
@@ -86,6 +90,46 @@ const CustomerProfile = () => {
 		fetchProfileAndAddresses();
 	}, []);
 
+	useEffect(() => {
+		const loadLeaflet = () => {
+			if (window.L) {
+				setLeafletReady(true);
+				return;
+			}
+
+			const leafletCssId = "leaflet-css-customer";
+			if (!document.getElementById(leafletCssId)) {
+				const link = document.createElement("link");
+				link.id = leafletCssId;
+				link.rel = "stylesheet";
+				link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+				document.head.appendChild(link);
+			}
+
+			const existingScript = document.getElementById("leaflet-js-customer");
+			if (existingScript) {
+				existingScript.addEventListener("load", () => setLeafletReady(true), { once: true });
+				return;
+			}
+
+			const script = document.createElement("script");
+			script.id = "leaflet-js-customer";
+			script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+			script.async = true;
+			script.onload = () => setLeafletReady(true);
+			document.body.appendChild(script);
+		};
+
+		loadLeaflet();
+
+		return () => {
+			if (mapInstanceRef.current) {
+				mapInstanceRef.current.remove();
+				mapInstanceRef.current = null;
+			}
+		};
+	}, []);
+
 	const profilePictureUrl = useMemo(() => {
 		return resolveMediaUrl(profile?.picture);
 	}, [profile]);
@@ -119,11 +163,18 @@ const CustomerProfile = () => {
 
 		const data = await response.json();
 		const address = data?.address || {};
+		const line1 = [address.house_number, address.road].filter(Boolean).join(" ");
+		const locality = address.neighbourhood || address.suburb || address.residential || "";
 		const city = address.city || address.town || address.village || address.hamlet || "";
 		const state = address.state || address.county || "";
+		const postcode = address.postcode || "";
 		const country = address.country || "";
 
-		return [city, state, country].filter(Boolean).join(", ") || data?.display_name || "";
+		const detailedAddress = [line1, locality, city, state, postcode, country]
+			.filter(Boolean)
+			.join(", ");
+
+		return detailedAddress || data?.display_name || "";
 	};
 
 	const handleUseMyLocation = async () => {
@@ -139,6 +190,42 @@ const CustomerProfile = () => {
 		} finally {
 			setIsDetectingLocation(false);
 		}
+	};
+
+	const initMapPicker = () => {
+		if (!leafletReady || !window.L || !mapRef.current) return;
+
+		if (mapInstanceRef.current) {
+			mapInstanceRef.current.remove();
+			mapInstanceRef.current = null;
+		}
+
+		const L = window.L;
+		const map = L.map(mapRef.current).setView([20.5937, 78.9629], 5);
+		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			attribution: "&copy; OpenStreetMap contributors",
+		}).addTo(map);
+
+		let marker = null;
+		map.on("click", async (event) => {
+			try {
+				setLocationDetectError("");
+				const { lat, lng } = event.latlng;
+				if (!marker) {
+					marker = L.marker([lat, lng]).addTo(map);
+				} else {
+					marker.setLatLng([lat, lng]);
+				}
+				const locationLabel = await reverseGeocode(lat, lng);
+				setDetectedLocation(locationLabel || `Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`);
+				setShowMapPicker(false);
+			} catch (error) {
+				setLocationDetectError(error?.message || "Unable to set location from map.");
+			}
+		});
+
+		mapInstanceRef.current = map;
+		setTimeout(() => map.invalidateSize(), 0);
 	};
 
 	const handleProfilePicture = (e) => {
@@ -476,21 +563,47 @@ const CustomerProfile = () => {
 								</div>
 							</div>
 
-							<div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] p-4">
-								<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-									<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Location</p>
-									<button
-										type="button"
-										onClick={handleUseMyLocation}
-										disabled={isDetectingLocation}
-										className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
-									>
-										{isDetectingLocation ? "Fetching..." : "Use My Location"}
-									</button>
-								</div>
-								<p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-									{detectedLocation || "Location not fetched yet."}
-								</p>
+								<div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] p-4">
+									<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+										<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Location</p>
+										<div className="flex flex-col sm:flex-row gap-2">
+											<button
+												type="button"
+												onClick={handleUseMyLocation}
+												disabled={isDetectingLocation}
+												className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+											>
+												{isDetectingLocation ? "Fetching..." : "Use Current Location"}
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													const nextValue = !showMapPicker;
+													setShowMapPicker(nextValue);
+													if (nextValue) {
+														setTimeout(() => initMapPicker(), 0);
+													}
+												}}
+												className="inline-flex items-center justify-center rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+											>
+												Select On Map
+											</button>
+										</div>
+									</div>
+									{showMapPicker && (
+										<div className="mt-3">
+											<p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+												Tap on map to set your location.
+											</p>
+											<div
+												ref={mapRef}
+												className="h-64 w-full rounded-xl border border-gray-200 dark:border-gray-800/60 overflow-hidden"
+											/>
+										</div>
+									)}
+									<p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+										{detectedLocation || "Location not fetched yet."}
+									</p>
 								{locationDetectError && (
 									<p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{locationDetectError}</p>
 								)}

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { resolveMediaUrl } from "../../utils/media";
@@ -12,6 +13,7 @@ const emptyCertificationForm = {
 
 const FarmerProfile = () => {
 	const { user, login } = useAuth();
+	const routerLocation = useLocation();
 
 	const [loading, setLoading] = useState(true);
 
@@ -23,6 +25,8 @@ const FarmerProfile = () => {
 		phone: "",
 		gender: "",
 		location: "",
+		latitude: "",
+		longitude: "",
 	});
 	const [isGenderDropdownOpen, setIsGenderDropdownOpen] = useState(false);
 	const [pictureFile, setPictureFile] = useState(null);
@@ -32,6 +36,16 @@ const FarmerProfile = () => {
 	const [profileError, setProfileError] = useState("");
 	const [isLocationFetching, setIsLocationFetching] = useState(false);
 	const [locationFetchError, setLocationFetchError] = useState("");
+	const [showCompleteProfileModal, setShowCompleteProfileModal] = useState(false);
+	const [mustCompleteProfile, setMustCompleteProfile] = useState(false);
+	const [showMapPicker, setShowMapPicker] = useState(false);
+	const [showProfileMapPicker, setShowProfileMapPicker] = useState(false);
+	const [locationSaveLoading, setLocationSaveLoading] = useState(false);
+	const [completeProfileError, setCompleteProfileError] = useState("");
+	const [leafletReady, setLeafletReady] = useState(false);
+	const modalMapRef = useRef(null);
+	const profileMapRef = useRef(null);
+	const mapInstancesRef = useRef({ modal: null, profile: null });
 
 	const [certifications, setCertifications] = useState([]);
 	const [certMessage, setCertMessage] = useState("");
@@ -68,7 +82,15 @@ const FarmerProfile = () => {
 				phone: profileData.phone || user?.phone || "",
 				gender: profileData.gender || "",
 				location: profileData.location || "",
+				latitude: profileData.latitude || "",
+				longitude: profileData.longitude || "",
 			});
+
+			const forceCompleteFromRegister = Boolean(routerLocation.state?.forceCompleteProfile);
+			const hasCoordinates = Boolean(profileData.latitude) && Boolean(profileData.longitude);
+			const mustComplete = forceCompleteFromRegister || !hasCoordinates;
+			setMustCompleteProfile(mustComplete);
+			setShowCompleteProfileModal(mustComplete);
 		} catch {
 			setProfileError("Failed to load profile details.");
 		} finally {
@@ -78,6 +100,50 @@ const FarmerProfile = () => {
 
 	useEffect(() => {
 		fetchProfileAndCertifications();
+	}, []);
+
+	useEffect(() => {
+		const loadLeaflet = async () => {
+			if (window.L) {
+				setLeafletReady(true);
+				return;
+			}
+
+			const leafletCssId = "leaflet-css";
+			if (!document.getElementById(leafletCssId)) {
+				const link = document.createElement("link");
+				link.id = leafletCssId;
+				link.rel = "stylesheet";
+				link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+				document.head.appendChild(link);
+			}
+
+			const existingScript = document.getElementById("leaflet-js");
+			if (existingScript) {
+				existingScript.addEventListener("load", () => setLeafletReady(true), { once: true });
+				return;
+			}
+
+			const script = document.createElement("script");
+			script.id = "leaflet-js";
+			script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+			script.async = true;
+			script.onload = () => setLeafletReady(true);
+			document.body.appendChild(script);
+		};
+
+		loadLeaflet();
+
+		return () => {
+			if (mapInstancesRef.current.modal) {
+				mapInstancesRef.current.modal.remove();
+				mapInstancesRef.current.modal = null;
+			}
+			if (mapInstancesRef.current.profile) {
+				mapInstancesRef.current.profile.remove();
+				mapInstancesRef.current.profile = null;
+			}
+		};
 	}, []);
 
 	const profilePictureUrl = useMemo(() => {
@@ -114,11 +180,47 @@ const FarmerProfile = () => {
 
 		const data = await response.json();
 		const address = data?.address || {};
+		const line1 = [address.house_number, address.road].filter(Boolean).join(" ");
+		const locality = address.neighbourhood || address.suburb || address.residential || "";
 		const city = address.city || address.town || address.village || address.hamlet || "";
 		const state = address.state || address.county || "";
+		const postcode = address.postcode || "";
 		const country = address.country || "";
 
-		return [city, state, country].filter(Boolean).join(", ") || data?.display_name || "";
+		const detailedAddress = [line1, locality, city, state, postcode, country]
+			.filter(Boolean)
+			.join(", ");
+
+		return detailedAddress || data?.display_name || "";
+	};
+
+	const setLocationFromCoordinates = async (latitude, longitude) => {
+		const fallbackLocation = `Lat ${latitude.toFixed(5)}, Lng ${longitude.toFixed(5)}`;
+
+		// Always persist coordinates immediately so profile save is not blocked.
+		setProfileForm((prev) => ({
+			...prev,
+			location: prev.location || fallbackLocation,
+			latitude: latitude.toFixed(6),
+			longitude: longitude.toFixed(6),
+		}));
+
+		try {
+			const locationLabel = await reverseGeocode(latitude, longitude);
+			setProfileForm((prev) => ({
+				...prev,
+				location: locationLabel || fallbackLocation,
+				latitude: latitude.toFixed(6),
+				longitude: longitude.toFixed(6),
+			}));
+		} catch {
+			setProfileForm((prev) => ({
+				...prev,
+				location: prev.location || fallbackLocation,
+				latitude: latitude.toFixed(6),
+				longitude: longitude.toFixed(6),
+			}));
+		}
 	};
 
 	const handleUseMyLocation = async () => {
@@ -127,16 +229,82 @@ const FarmerProfile = () => {
 			setIsLocationFetching(true);
 			const position = await getCurrentPosition();
 			const { latitude, longitude } = position.coords;
-			const locationLabel = await reverseGeocode(latitude, longitude);
-
-			setProfileForm((prev) => ({
-				...prev,
-				location: locationLabel || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
-			}));
+			await setLocationFromCoordinates(latitude, longitude);
 		} catch (error) {
 			setLocationFetchError(error?.message || "Unable to fetch location. Please try again.");
 		} finally {
 			setIsLocationFetching(false);
+		}
+	};
+
+	const initMapPicker = (target) => {
+		if (!leafletReady || !window.L) return;
+		const container = target === "modal" ? modalMapRef.current : profileMapRef.current;
+		if (!container) return;
+
+		const prevMap = mapInstancesRef.current[target];
+		if (prevMap) {
+			prevMap.remove();
+			mapInstancesRef.current[target] = null;
+		}
+
+		const L = window.L;
+		const initialLat = Number(profileForm.latitude) || 20.5937;
+		const initialLng = Number(profileForm.longitude) || 78.9629;
+		const initialZoom = profileForm.latitude && profileForm.longitude ? 13 : 5;
+
+		const map = L.map(container).setView([initialLat, initialLng], initialZoom);
+		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			attribution: "&copy; OpenStreetMap contributors",
+		}).addTo(map);
+
+		let marker = L.marker([initialLat, initialLng]).addTo(map);
+
+		map.on("click", async (event) => {
+			try {
+				setLocationFetchError("");
+				const { lat, lng } = event.latlng;
+				marker.setLatLng([lat, lng]);
+				await setLocationFromCoordinates(lat, lng);
+				if (target === "modal") {
+					setShowMapPicker(false);
+				} else {
+					setShowProfileMapPicker(false);
+				}
+			} catch (error) {
+				setLocationFetchError(error?.message || "Unable to set location from map.");
+			}
+		});
+
+		mapInstancesRef.current[target] = map;
+		setTimeout(() => map.invalidateSize(), 0);
+	};
+
+	const handleCompleteProfileLocation = async () => {
+		setCompleteProfileError("");
+		if (!profileForm.location || !profileForm.latitude || !profileForm.longitude) {
+			setCompleteProfileError("Set your farm location first using current location or map.");
+			return;
+		}
+
+		const payload = new FormData();
+		payload.append("location", profileForm.location);
+		payload.append("latitude", profileForm.latitude);
+		payload.append("longitude", profileForm.longitude);
+
+		try {
+			setLocationSaveLoading(true);
+			const res = await api.patch("/auth/farmer/profile/", payload, {
+				headers: { "Content-Type": "multipart/form-data" },
+			});
+			setProfile(res.data);
+			setShowCompleteProfileModal(false);
+			setMustCompleteProfile(false);
+			setProfileMessage("Profile location completed. You can now sell products.");
+		} catch (error) {
+			setCompleteProfileError(error?.response?.data?.detail || "Failed to save location. Please retry.");
+		} finally {
+			setLocationSaveLoading(false);
 		}
 	};
 
@@ -166,6 +334,12 @@ const FarmerProfile = () => {
 		payload.append("phone", profileForm.phone);
 		payload.append("gender", profileForm.gender);
 		payload.append("location", profileForm.location);
+		if (profileForm.latitude) {
+			payload.append("latitude", profileForm.latitude);
+		}
+		if (profileForm.longitude) {
+			payload.append("longitude", profileForm.longitude);
+		}
 		if (pictureFile) {
 			payload.append("picture", pictureFile);
 		} else if (removePicture) {
@@ -327,6 +501,72 @@ const FarmerProfile = () => {
 
 	return (
 		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
+			{showCompleteProfileModal && mustCompleteProfile && (
+				<div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+					<div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+					<div className="relative z-10 w-full max-w-xl rounded-3xl border border-gray-200 dark:border-gray-800/70 bg-white dark:bg-[#111812] p-6 sm:p-8 shadow-2xl">
+						<h3 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight">Complete Profile To Sell</h3>
+						<p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+							Set your farm location to start listing products for nearby customers.
+						</p>
+
+						<div className="mt-6 flex flex-col sm:flex-row gap-3">
+							<button
+								type="button"
+								onClick={handleUseMyLocation}
+								disabled={isLocationFetching}
+								className="inline-flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 px-4 py-2.5 text-sm font-bold text-white transition-colors"
+							>
+								{isLocationFetching ? "Detecting..." : "Use Current Location"}
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									const nextValue = !showMapPicker;
+									setShowMapPicker(nextValue);
+									if (nextValue) {
+										setTimeout(() => initMapPicker("modal"), 0);
+									}
+								}}
+								className="inline-flex items-center justify-center rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-4 py-2.5 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+							>
+								Choose On Map
+							</button>
+						</div>
+
+						{showMapPicker && (
+							<div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 p-4 bg-gray-50 dark:bg-[#1A241A]">
+								<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+									Tap on map to set your farm location.
+								</p>
+								<div
+									ref={modalMapRef}
+									className="mt-3 h-72 w-full rounded-xl border border-gray-200 dark:border-gray-800/60 overflow-hidden"
+								/>
+							</div>
+						)}
+
+						<p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+							{profileForm.location || "Location not selected yet."}
+						</p>
+						{locationFetchError && (
+							<p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{locationFetchError}</p>
+						)}
+						{completeProfileError && (
+							<p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{completeProfileError}</p>
+						)}
+
+						<button
+							type="button"
+							onClick={handleCompleteProfileLocation}
+							disabled={locationSaveLoading}
+							className="mt-6 w-full rounded-xl bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-60 px-5 py-3 text-sm font-bold text-white transition-colors"
+						>
+							{locationSaveLoading ? "Saving..." : "Complete Profile"}
+						</button>
+					</div>
+				</div>
+			)}
 			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
 
                 {/* Premium Header */}
@@ -508,21 +748,47 @@ const FarmerProfile = () => {
 
 						</div>
 
-					<div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] p-4">
-						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-							<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Location</p>
-							<button
-								type="button"
-								onClick={handleUseMyLocation}
-								disabled={isLocationFetching}
-								className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
-							>
-								{isLocationFetching ? "Fetching..." : "Use My Location"}
-							</button>
-						</div>
-						<p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-							{profileForm.location || "Location not fetched yet."}
-						</p>
+						<div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] p-4">
+							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+								<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Location</p>
+								<div className="flex flex-col sm:flex-row gap-2">
+									<button
+										type="button"
+										onClick={handleUseMyLocation}
+										disabled={isLocationFetching}
+										className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+									>
+										{isLocationFetching ? "Fetching..." : "Use Current Location"}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const nextValue = !showProfileMapPicker;
+											setShowProfileMapPicker(nextValue);
+											if (nextValue) {
+												setTimeout(() => initMapPicker("profile"), 0);
+											}
+										}}
+										className="inline-flex items-center justify-center rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+									>
+										Select On Map
+									</button>
+								</div>
+							</div>
+							{showProfileMapPicker && (
+								<div className="mt-3">
+									<p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+										Tap on map to set your farm location.
+									</p>
+									<div
+										ref={profileMapRef}
+										className="h-64 w-full rounded-xl border border-gray-200 dark:border-gray-800/60 overflow-hidden"
+									/>
+								</div>
+							)}
+							<p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+								{profileForm.location || "Location not fetched yet."}
+							</p>
 						{locationFetchError && (
 							<p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{locationFetchError}</p>
 						)}

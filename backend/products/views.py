@@ -1,10 +1,17 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from accounts.permissions import FarmerPermission
+from accounts.permissions import CustomerPermission, FarmerPermission
+from utils.location import haversine
 from .models import Product, ProductCategory
-from .serializers import ProductReadSerializer, ProductWriteSerializer, ProductCategorySerializer
+from .serializers import (
+    NearbyProductReadSerializer,
+    ProductCategorySerializer,
+    ProductReadSerializer,
+    ProductWriteSerializer,
+)
 
 
 # 1. ProductListCreateView - List all products and create new product
@@ -101,3 +108,48 @@ class ProductCategoryListView(generics.ListAPIView):
     serializer_class = ProductCategorySerializer
     pagination_class = None
     queryset = ProductCategory.objects.all().order_by('name')
+
+
+class NearbyProductListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, CustomerPermission]
+    serializer_class = NearbyProductReadSerializer
+    max_distance_km = 30
+
+    def _get_customer_coordinates(self):
+        customer_profile = getattr(self.request.user, "customerprofile", None)
+
+        if customer_profile is None:
+            raise ValidationError({"detail": "Customer profile not found for the authenticated user."})
+
+        if customer_profile.latitude is None or customer_profile.longitude is None:
+            raise ValidationError({"detail": "Customer location is required to fetch nearby products."})
+
+        return customer_profile.latitude, customer_profile.longitude
+
+    def get_queryset(self):
+        customer_latitude, customer_longitude = self._get_customer_coordinates()
+        nearby_products = []
+
+        products = (
+            Product.objects.filter(
+                is_active=True,
+                farmer__latitude__isnull=False,
+                farmer__longitude__isnull=False,
+            )
+            .select_related("farmer", "farmer__user")
+            .prefetch_related("images", "categories")
+        )
+
+        for product in products:
+            distance_km = haversine(
+                customer_latitude,
+                customer_longitude,
+                product.farmer.latitude,
+                product.farmer.longitude,
+            )
+            if distance_km <= self.max_distance_km:
+                product.distance_km = round(distance_km, 2)
+                nearby_products.append(product)
+
+        nearby_products.sort(key=lambda product: (product.distance_km, product.id))
+        return nearby_products

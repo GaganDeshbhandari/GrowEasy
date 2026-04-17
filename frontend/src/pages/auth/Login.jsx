@@ -13,6 +13,34 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  
+  const getCurrentPosition = () =>
+    new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by your browser."));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      });
+    });
+
+  const saveCustomerLocation = async () => {
+    try {
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      await api.patch("/auth/customer/profile/", {
+        latitude: latitude.toFixed(6),
+        longitude: longitude.toFixed(6),
+      });
+    } catch (locationError) {
+      // Keep login flow non-blocking for customer if browser blocks location.
+      console.warn("Customer location update skipped:", locationError);
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
@@ -26,6 +54,11 @@ const Login = () => {
     try {
       const response = await api.post("/auth/login/", formData);
       const userData = response.data.user;
+
+      if (userData.role === "customer") {
+        await saveCustomerLocation();
+      }
+
       login(userData);
 
       if (userData.role === "farmer") {

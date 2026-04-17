@@ -23,6 +23,33 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
+  const getCurrentPosition = () =>
+    new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by your browser."));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      });
+    });
+
+  const saveCustomerLocation = async () => {
+    try {
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      await api.patch("/auth/customer/profile/", {
+        latitude: latitude.toFixed(6),
+        longitude: longitude.toFixed(6),
+      });
+    } catch (locationError) {
+      // Keep registration flow non-blocking for customer if browser blocks location.
+      console.warn("Customer location update skipped:", locationError);
+    }
+  };
+
   const roleOptions = [
     { value: "customer", label: "Customer", desc: "Buy fresh products", icon: "🛒" },
     { value: "farmer", label: "Farmer", desc: "Sell your harvest", icon: "🌾" }
@@ -47,10 +74,17 @@ const Register = () => {
     try {
       const response = await api.post("/auth/register/", formData);
       const userData = response.data.user;
+
+      if (userData.role === "customer") {
+        await saveCustomerLocation();
+      }
+
       login(userData);
 
       if (userData.role === "farmer") {
-        navigate("/farmer/dashboard");
+        navigate("/profile/farmer", {
+          state: { forceCompleteProfile: true },
+        });
       } else {
         navigate("/products");
       }

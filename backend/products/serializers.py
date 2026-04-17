@@ -42,6 +42,14 @@ class ProductReadSerializer(serializers.ModelSerializer):
         read_only_fields = ['farmer', 'farmer_id', 'created_at', 'updated_at', 'images', 'categories']
 
 
+class NearbyProductReadSerializer(ProductReadSerializer):
+    distance_km = serializers.FloatField(read_only=True)
+
+    class Meta(ProductReadSerializer.Meta):
+        fields = ProductReadSerializer.Meta.fields + ['distance_km']
+        read_only_fields = ProductReadSerializer.Meta.read_only_fields + ['distance_km']
+
+
 # 3. ProductSerializer - Write (accepts category IDs)
 class ProductWriteSerializer(serializers.ModelSerializer):
     categories = serializers.PrimaryKeyRelatedField(
