@@ -26,6 +26,7 @@ const Checkout = () => {
 	const [showAddAddress, setShowAddAddress] = useState(false);
 	const [addressForm, setAddressForm] = useState(initialAddressForm);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isLocationFetching, setIsLocationFetching] = useState(false);
 
 	const [pageError, setPageError] = useState("");
 	const [addressError, setAddressError] = useState("");
@@ -85,6 +86,60 @@ const Checkout = () => {
 			...prev,
 			[name]: type === "checkbox" ? checked : value,
 		}));
+	};
+
+	const getCurrentPosition = () =>
+		new Promise((resolve, reject) => {
+			if (!navigator.geolocation) {
+				reject(new Error("Geolocation is not supported by your browser."));
+				return;
+			}
+
+			navigator.geolocation.getCurrentPosition(resolve, reject, {
+				enableHighAccuracy: true,
+				timeout: 10000,
+				maximumAge: 0,
+			});
+		});
+
+	const reverseGeocode = async (latitude, longitude) => {
+		const response = await fetch(
+			`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+		);
+		if (!response.ok) {
+			throw new Error("Unable to fetch address from map service.");
+		}
+
+		const data = await response.json();
+		const addr = data?.address || {};
+		return {
+			address: [addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", "),
+			city: addr.city || addr.town || addr.village || addr.hamlet || "",
+			state: addr.state || addr.county || "",
+			pincode: addr.postcode || "",
+		};
+	};
+
+	const handleUseMyLocation = async () => {
+		setAddressError("");
+		try {
+			setIsLocationFetching(true);
+			const position = await getCurrentPosition();
+			const { latitude, longitude } = position.coords;
+			const locationData = await reverseGeocode(latitude, longitude);
+
+			setAddressForm((prev) => ({
+				...prev,
+				address: locationData.address || prev.address,
+				city: locationData.city || prev.city,
+				state: locationData.state || prev.state,
+				pincode: locationData.pincode || prev.pincode,
+			}));
+		} catch (error) {
+			setAddressError(error?.message || "Unable to fetch location. Please try again.");
+		} finally {
+			setIsLocationFetching(false);
+		}
 	};
 
 	const handleAddAddress = async (e) => {
@@ -244,12 +299,20 @@ const Checkout = () => {
 							))}
 						</div>
 
-						{showAddAddress && (
-							<form onSubmit={handleAddAddress} className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
-								<h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">Add New Address</h3>
+							{showAddAddress && (
+								<form onSubmit={handleAddAddress} className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+									<h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">Add New Address</h3>
+									<button
+										type="button"
+										onClick={handleUseMyLocation}
+										disabled={isLocationFetching}
+										className="mb-4 inline-flex items-center gap-2 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-green-700 dark:text-green-400 transition-colors"
+									>
+										{isLocationFetching ? "Fetching..." : "Use My Location"}
+									</button>
 
-								{addressError && (
-									<div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
+									{addressError && (
+										<div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
 										{addressError}
 									</div>
 								)}

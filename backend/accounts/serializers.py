@@ -76,6 +76,8 @@ class FarmerProfileSerializer(serializers.ModelSerializer):
             'phone',
             'gender',
             'location',
+            'latitude',
+            'longitude',
             'picture',
             'created_at',
             'updated_at'
@@ -101,7 +103,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomerProfile
-        fields = ['id','user','picture','created_at','updated_at']
+        fields = ['id','user','picture','latitude','longitude','created_at','updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
 
@@ -169,6 +171,8 @@ class FarmerPublicProfileSerializer(serializers.ModelSerializer):
             'name',
             'picture',
             'location',
+            'latitude',
+            'longitude',
             'avg_rating',
             'certifications',
             'total_products',

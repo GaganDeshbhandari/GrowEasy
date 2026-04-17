@@ -61,6 +61,8 @@ class FarmerProfile(models.Model):
    picture = models.ImageField(upload_to='farmer/profiles/', null=True, blank=True)
    gender = models.CharField(max_length=40, choices=GENDER_CHOICES, null=True, blank=True)
    location = models.TextField(null=True, blank=True) # will integrate the Maps API for this later
+   latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+   longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
 
    created_at = models.DateTimeField(auto_now_add=True)
    updated_at = models.DateTimeField(auto_now=True)
@@ -79,6 +81,8 @@ class FarmerProfile(models.Model):
 class CustomerProfile(models.Model):
    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
    picture = models.ImageField(upload_to='customer/profiles/', null=True, blank=True)
+   latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+   longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
 
    created_at = models.DateTimeField(auto_now_add=True)
    updated_at = models.DateTimeField(auto_now=True)

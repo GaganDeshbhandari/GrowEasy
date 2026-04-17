@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
@@ -34,7 +33,6 @@ import FarmerProfile from "./pages/farmer/FarmerProfile";
 function App() {
   return (
     <ThemeProvider>
-      {/* <AuthProvider> */}
         <BrowserRouter>
           {/* Navbar sits here so it shows on every single page */}
           <Navbar />
@@ -109,7 +107,6 @@ function App() {
         </Routes>
         <Footer />
         </BrowserRouter>
-      {/* </AuthProvider> */}
     </ThemeProvider>
   );
 }

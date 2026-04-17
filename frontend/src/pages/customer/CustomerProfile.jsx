@@ -31,6 +31,9 @@ const CustomerProfile = () => {
 	const [profileSubmitting, setProfileSubmitting] = useState(false);
 	const [profileMessage, setProfileMessage] = useState("");
 	const [profileError, setProfileError] = useState("");
+	const [detectedLocation, setDetectedLocation] = useState("");
+	const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+	const [locationDetectError, setLocationDetectError] = useState("");
 
 	const [addresses, setAddresses] = useState([]);
 	const [addressMessage, setAddressMessage] = useState("");
@@ -90,6 +93,52 @@ const CustomerProfile = () => {
 	const handleProfileInput = (e) => {
 		const { name, value } = e.target;
 		setProfileForm((prev) => ({ ...prev, [name]: value }));
+	};
+
+	const getCurrentPosition = () =>
+		new Promise((resolve, reject) => {
+			if (!navigator.geolocation) {
+				reject(new Error("Geolocation is not supported by your browser."));
+				return;
+			}
+
+			navigator.geolocation.getCurrentPosition(resolve, reject, {
+				enableHighAccuracy: true,
+				timeout: 10000,
+				maximumAge: 0,
+			});
+		});
+
+	const reverseGeocode = async (latitude, longitude) => {
+		const response = await fetch(
+			`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+		);
+		if (!response.ok) {
+			throw new Error("Unable to fetch address from map service.");
+		}
+
+		const data = await response.json();
+		const address = data?.address || {};
+		const city = address.city || address.town || address.village || address.hamlet || "";
+		const state = address.state || address.county || "";
+		const country = address.country || "";
+
+		return [city, state, country].filter(Boolean).join(", ") || data?.display_name || "";
+	};
+
+	const handleUseMyLocation = async () => {
+		setLocationDetectError("");
+		try {
+			setIsDetectingLocation(true);
+			const position = await getCurrentPosition();
+			const { latitude, longitude } = position.coords;
+			const locationLabel = await reverseGeocode(latitude, longitude);
+			setDetectedLocation(locationLabel || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+		} catch (error) {
+			setLocationDetectError(error?.message || "Unable to fetch location. Please try again.");
+		} finally {
+			setIsDetectingLocation(false);
+		}
 	};
 
 	const handleProfilePicture = (e) => {
@@ -381,7 +430,7 @@ const CustomerProfile = () => {
 							</div>
 						</div>
 
-						<div className="grid sm:grid-cols-2 gap-5">
+							<div className="grid sm:grid-cols-2 gap-5">
 							<div>
 								<input
 									type="text"
@@ -414,20 +463,40 @@ const CustomerProfile = () => {
 									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
 								/>
 							</div>
-							<div>
-								<input
-									type="text"
-									name="phone"
-									value={profileForm.phone}
-									onChange={handleProfileInput}
-									placeholder="Phone"
-									required
-									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
-								/>
+								<div>
+									<input
+										type="text"
+										name="phone"
+										value={profileForm.phone}
+										onChange={handleProfileInput}
+										placeholder="Phone"
+										required
+										className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400"
+									/>
+								</div>
 							</div>
-						</div>
 
-						<div className="pt-6">
+							<div className="mt-5 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] p-4">
+								<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+									<p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Current Location</p>
+									<button
+										type="button"
+										onClick={handleUseMyLocation}
+										disabled={isDetectingLocation}
+										className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+									>
+										{isDetectingLocation ? "Fetching..." : "Use My Location"}
+									</button>
+								</div>
+								<p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+									{detectedLocation || "Location not fetched yet."}
+								</p>
+								{locationDetectError && (
+									<p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">{locationDetectError}</p>
+								)}
+							</div>
+
+							<div className="pt-6">
 							<button
 								type="submit"
 								disabled={profileSubmitting}

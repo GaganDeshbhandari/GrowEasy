@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -23,7 +23,7 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const fetchCartCount = () => {
+  const fetchCartCount = useCallback(() => {
     if (user?.role === "customer") {
       api
         .get("/orders/cart/")
@@ -32,17 +32,17 @@ const Navbar = () => {
     } else {
       setCartCount(0);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchCartCount();
-  }, [user, location.pathname]);
+  }, [fetchCartCount, location.pathname]);
 
   // Listen for real-time cart updates triggered by ProductDetail
   useEffect(() => {
     window.addEventListener("cartUpdated", fetchCartCount);
     return () => window.removeEventListener("cartUpdated", fetchCartCount);
-  }, [user]);
+  }, [fetchCartCount]);
 
   const handleLogout = async () => {
     await logout();

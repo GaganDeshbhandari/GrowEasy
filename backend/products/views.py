@@ -66,9 +66,18 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         write_serializer.is_valid(raise_exception=True)
         self.perform_update(write_serializer)
 
+        # Refresh the instance so the response includes updated relations
+        # (e.g., images/categories) instead of returning stale pre-update data.
+        refreshed_instance = (
+            self.get_queryset()
+            .select_related('farmer')
+            .prefetch_related('images', 'categories')
+            .get(pk=instance.pk)
+        )
+
         # Always return the full read representation for API consistency.
         read_serializer = ProductReadSerializer(
-            instance,
+            refreshed_instance,
             context=self.get_serializer_context(),
         )
         return Response(read_serializer.data, status=status.HTTP_200_OK)
