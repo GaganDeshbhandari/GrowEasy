@@ -74,6 +74,25 @@ const ProductList = () => {
     return resolveMediaUrl(primary?.image);
   };
 
+  const getStockText = (stock, unit) => {
+    const stockValue = parseFloat(stock);
+    const normalizedUnit = String(unit || "").toLowerCase();
+
+    if (!(stockValue > 0)) return "Out of Stock";
+
+    const displayStock = Number.isInteger(stockValue) ? stockValue : stockValue.toFixed(2).replace(/\.00$/, "");
+
+    if (normalizedUnit.includes("kg")) {
+      return `${displayStock} kg left`;
+    }
+
+    if (normalizedUnit.includes("unit")) {
+      return `${displayStock} ${stockValue === 1 ? "unit" : "units"} left`;
+    }
+
+    return `${displayStock} ${unit || "units"} left`;
+  };
+
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
@@ -100,7 +119,7 @@ const ProductList = () => {
             <div className="h-12 sm:h-16 w-3/4 sm:w-1/2 bg-gray-200 dark:bg-gray-800 rounded-2xl mb-4"></div>
             <div className="h-5 w-1/2 sm:w-1/3 bg-gray-200 dark:bg-gray-800 rounded-xl"></div>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm animate-pulse">
@@ -146,7 +165,7 @@ const ProductList = () => {
       {/* ── Filter / Search Bar ── */}
       <div className="sticky top-[72px] z-30 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 transition-colors duration-300 shadow-sm shadow-black/5 dark:shadow-black/20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          
+
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto flex-1">
             {/* Search bar */}
             <div className="relative w-full sm:max-w-md group">
@@ -164,11 +183,11 @@ const ProductList = () => {
 
             {/* Category filter */}
             <div className="relative w-full sm:w-auto">
-              <div 
+              <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className={`flex items-center justify-between w-full sm:w-56 px-5 py-2.5 rounded-2xl border bg-white dark:bg-gray-800 cursor-pointer shadow-sm transition-all outline-none ${
-                  isDropdownOpen 
-                    ? "border-emerald-500 ring-4 ring-emerald-500/20" 
+                  isDropdownOpen
+                    ? "border-emerald-500 ring-4 ring-emerald-500/20"
                     : "border-gray-200/70 dark:border-gray-700/70 hover:border-gray-300 dark:hover:border-gray-600 focus:ring-4 focus:ring-emerald-500/20"
                 }`}
                 tabIndex={0}
@@ -192,8 +211,8 @@ const ProductList = () => {
               {/* Dropdown Menu */}
               <div
                 className={`absolute right-0 top-full mt-2 w-full sm:w-56 bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/80 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-2 z-50 transition-all duration-200 origin-top flex flex-col gap-1 max-h-[300px] overflow-y-auto hide-scrollbar ${
-                  isDropdownOpen 
-                    ? "opacity-100 scale-100 translate-y-0" 
+                  isDropdownOpen
+                    ? "opacity-100 scale-100 translate-y-0"
                     : "opacity-0 scale-95 -translate-y-2 pointer-events-none hidden"
                 }`}
               >
@@ -218,10 +237,6 @@ const ProductList = () => {
             </div>
           </div>
 
-          {/* Results count */}
-          <div className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest whitespace-nowrap bg-gray-100/50 dark:bg-gray-800/50 px-4 py-3 rounded-xl border border-gray-200/50 dark:border-gray-700/50">
-            Showing <span className="text-emerald-700 dark:text-emerald-400 text-sm">{filtered.length}</span> of {count}
-          </div>
         </div>
       </div>
 
@@ -258,7 +273,7 @@ const ProductList = () => {
                   )}
                   {/* Overlay gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  
+
                   {/* Badge */}
                   {product.categories.length > 0 && (
                     <span className="absolute top-4 left-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-900 dark:text-gray-100 shadow-sm text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-gray-200/50 dark:border-gray-700/50">
@@ -308,7 +323,7 @@ const ProductList = () => {
                         ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/50"
                         : "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-800/50"
                     }`}>
-                      {parseFloat(product.stock) > 0 ? `${parseFloat(product.stock)} Left` : "Out of Stock"}
+                      {getStockText(product.stock, product.unit)}
                     </span>
                   </div>
                 </div>
@@ -321,7 +336,7 @@ const ProductList = () => {
         {totalPages > 1 && (
           <div className="mt-16 flex flex-col items-center gap-4">
             <div className="inline-flex items-center gap-1.5 bg-white dark:bg-gray-900 p-2 rounded-2xl shadow-sm border border-gray-200/60 dark:border-gray-800">
-              
+
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}

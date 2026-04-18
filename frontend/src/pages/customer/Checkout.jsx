@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
@@ -27,6 +27,10 @@ const Checkout = () => {
 	const [addressForm, setAddressForm] = useState(initialAddressForm);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [isLocationFetching, setIsLocationFetching] = useState(false);
+	const [showMapPicker, setShowMapPicker] = useState(false);
+	const [leafletReady, setLeafletReady] = useState(false);
+	const mapRef = useRef(null);
+	const mapInstanceRef = useRef(null);
 
 	const [pageError, setPageError] = useState("");
 	const [addressError, setAddressError] = useState("");
@@ -72,6 +76,46 @@ const Checkout = () => {
 		fetchCheckoutData();
 	}, []);
 
+	useEffect(() => {
+		const loadLeaflet = () => {
+			if (window.L) {
+				setLeafletReady(true);
+				return;
+			}
+
+			const leafletCssId = "leaflet-css-checkout";
+			if (!document.getElementById(leafletCssId)) {
+				const link = document.createElement("link");
+				link.id = leafletCssId;
+				link.rel = "stylesheet";
+				link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+				document.head.appendChild(link);
+			}
+
+			const existingScript = document.getElementById("leaflet-js-checkout");
+			if (existingScript) {
+				existingScript.addEventListener("load", () => setLeafletReady(true), { once: true });
+				return;
+			}
+
+			const script = document.createElement("script");
+			script.id = "leaflet-js-checkout";
+			script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+			script.async = true;
+			script.onload = () => setLeafletReady(true);
+			document.body.appendChild(script);
+		};
+
+		loadLeaflet();
+
+		return () => {
+			if (mapInstanceRef.current) {
+				mapInstanceRef.current.remove();
+				mapInstanceRef.current = null;
+			}
+		};
+	}, []);
+
 	const selectedAddress = useMemo(
 		() => addresses.find((addr) => addr.id === selectedAddressId) || null,
 		[addresses, selectedAddressId]
@@ -112,12 +156,77 @@ const Checkout = () => {
 
 		const data = await response.json();
 		const addr = data?.address || {};
+		const line1Parts = [
+			addr.house_number,
+			addr.building,
+			addr.road,
+			addr.suburb,
+			addr.neighbourhood,
+			addr.residential,
+			addr.locality,
+			addr.city_district,
+			addr.county,
+			addr.state_district,
+			addr.postcode,
+			addr.country,
+		].filter(Boolean);
+		const fallbackAddress = line1Parts.join(", ");
 		return {
-			address: [addr.road, addr.suburb, addr.neighbourhood].filter(Boolean).join(", "),
-			city: addr.city || addr.town || addr.village || addr.hamlet || "",
-			state: addr.state || addr.county || "",
+			address: data?.display_name || fallbackAddress || "",
+			city:
+				addr.city ||
+				addr.town ||
+				addr.village ||
+				addr.hamlet ||
+				addr.municipality ||
+				addr.county ||
+				"",
+			state: addr.state || addr.state_district || addr.region || addr.county || "",
 			pincode: addr.postcode || "",
 		};
+	};
+
+	const initMapPicker = () => {
+		if (!leafletReady || !window.L || !mapRef.current) return;
+
+		if (mapInstanceRef.current) {
+			mapInstanceRef.current.remove();
+			mapInstanceRef.current = null;
+		}
+
+		const L = window.L;
+		const map = L.map(mapRef.current).setView([20.5937, 78.9629], 5);
+		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			attribution: "&copy; OpenStreetMap contributors",
+		}).addTo(map);
+
+		let marker = null;
+		map.on("click", async (event) => {
+			try {
+				setAddressError("");
+				const { lat, lng } = event.latlng;
+				if (!marker) {
+					marker = L.marker([lat, lng]).addTo(map);
+				} else {
+					marker.setLatLng([lat, lng]);
+				}
+
+				const locationData = await reverseGeocode(lat, lng);
+				setAddressForm((prev) => ({
+					...prev,
+					address: locationData.address || prev.address,
+					city: locationData.city || prev.city,
+					state: locationData.state || prev.state,
+					pincode: locationData.pincode || prev.pincode,
+				}));
+				setShowMapPicker(false);
+			} catch (error) {
+				setAddressError(error?.message || "Unable to fetch address from map.");
+			}
+		});
+
+		mapInstanceRef.current = map;
+		setTimeout(() => map.invalidateSize(), 0);
 	};
 
 	const handleUseMyLocation = async () => {
@@ -154,6 +263,7 @@ const Checkout = () => {
 			setSelectedAddressId(newAddress.id);
 			setAddressForm(initialAddressForm);
 			setShowAddAddress(false);
+			setShowMapPicker(false);
 		} catch {
 			setAddressError("Failed to save address. Please check details and try again.");
 		}
@@ -246,7 +356,10 @@ const Checkout = () => {
 							<h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Delivery Address</h2>
 							<button
 								type="button"
-								onClick={() => setShowAddAddress((prev) => !prev)}
+								onClick={() => {
+									setShowAddAddress((prev) => !prev);
+									setShowMapPicker(false);
+								}}
 								className="text-sm font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
 							>
 								{showAddAddress ? "Cancel" : "+ Add New Address"}
@@ -310,6 +423,31 @@ const Checkout = () => {
 									>
 										{isLocationFetching ? "Fetching..." : "Use My Location"}
 									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const nextValue = !showMapPicker;
+											setShowMapPicker(nextValue);
+											if (nextValue) {
+												setTimeout(() => initMapPicker(), 0);
+											}
+										}}
+										className="mb-4 ml-2 inline-flex items-center gap-2 rounded-xl border border-green-300 dark:border-green-800/60 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 px-4 py-2 text-sm font-bold text-green-700 dark:text-green-400 transition-colors"
+									>
+										{showMapPicker ? "Hide Map" : "Choose On Map"}
+									</button>
+
+									{showMapPicker && (
+										<div className="mb-4">
+											<p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+												Tap on map to auto-fill address details.
+											</p>
+											<div
+												ref={mapRef}
+												className="h-64 w-full rounded-xl border border-gray-300 dark:border-gray-600 overflow-hidden"
+											/>
+										</div>
+									)}
 
 									{addressError && (
 										<div className="mb-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">

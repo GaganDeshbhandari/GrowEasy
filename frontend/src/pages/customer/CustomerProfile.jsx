@@ -38,6 +38,8 @@ const CustomerProfile = () => {
 	const [leafletReady, setLeafletReady] = useState(false);
 	const mapRef = useRef(null);
 	const mapInstanceRef = useRef(null);
+	const addressMapRef = useRef(null);
+	const addressMapInstanceRef = useRef(null);
 
 	const [addresses, setAddresses] = useState([]);
 	const [addressMessage, setAddressMessage] = useState("");
@@ -46,11 +48,14 @@ const CustomerProfile = () => {
 	const [showAddAddress, setShowAddAddress] = useState(false);
 	const [newAddressForm, setNewAddressForm] = useState(emptyAddressForm);
 	const [creatingAddress, setCreatingAddress] = useState(false);
+	const [showAddressMapPicker, setShowAddressMapPicker] = useState(false);
+	const [isDetectingAddressLocation, setIsDetectingAddressLocation] = useState(false);
 
 	const [editingAddressId, setEditingAddressId] = useState(null);
 	const [editAddressForm, setEditAddressForm] = useState(emptyAddressForm);
 	const [updatingAddressId, setUpdatingAddressId] = useState(null);
 	const [deletingAddressId, setDeletingAddressId] = useState(null);
+	const [confirmDeleteAddressId, setConfirmDeleteAddressId] = useState(null);
 	const [settingDefaultId, setSettingDefaultId] = useState(null);
 
 	const fetchProfileAndAddresses = async () => {
@@ -127,6 +132,10 @@ const CustomerProfile = () => {
 				mapInstanceRef.current.remove();
 				mapInstanceRef.current = null;
 			}
+			if (addressMapInstanceRef.current) {
+				addressMapInstanceRef.current.remove();
+				addressMapInstanceRef.current = null;
+			}
 		};
 	}, []);
 
@@ -153,7 +162,7 @@ const CustomerProfile = () => {
 			});
 		});
 
-	const reverseGeocode = async (latitude, longitude) => {
+	const reverseGeocodeDetailed = async (latitude, longitude) => {
 		const response = await fetch(
 			`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
 		);
@@ -163,10 +172,20 @@ const CustomerProfile = () => {
 
 		const data = await response.json();
 		const address = data?.address || {};
-		const line1 = [address.house_number, address.road].filter(Boolean).join(" ");
-		const locality = address.neighbourhood || address.suburb || address.residential || "";
+		const line1Parts = [
+			address.house_number,
+			address.building,
+			address.road,
+			address.suburb,
+			address.neighbourhood,
+			address.residential,
+			address.city_district,
+			address.county,
+		].filter(Boolean);
+		const line1 = line1Parts.join(", ");
+		const locality = address.locality || "";
 		const city = address.city || address.town || address.village || address.hamlet || "";
-		const state = address.state || address.county || "";
+		const state = address.state || address.state_district || address.county || "";
 		const postcode = address.postcode || "";
 		const country = address.country || "";
 
@@ -174,7 +193,18 @@ const CustomerProfile = () => {
 			.filter(Boolean)
 			.join(", ");
 
-		return detailedAddress || data?.display_name || "";
+		return {
+			fullAddress: data?.display_name || detailedAddress || "",
+			line1: [line1, locality].filter(Boolean).join(", "),
+			city: city || address.municipality || address.county || "",
+			state,
+			pincode: postcode,
+		};
+	};
+
+	const reverseGeocode = async (latitude, longitude) => {
+		const details = await reverseGeocodeDetailed(latitude, longitude);
+		return details.fullAddress;
 	};
 
 	const handleUseMyLocation = async () => {
@@ -226,6 +256,75 @@ const CustomerProfile = () => {
 
 		mapInstanceRef.current = map;
 		setTimeout(() => map.invalidateSize(), 0);
+	};
+
+	const initAddressMapPicker = () => {
+		if (!leafletReady || !window.L || !addressMapRef.current) return;
+
+		if (addressMapInstanceRef.current) {
+			addressMapInstanceRef.current.remove();
+			addressMapInstanceRef.current = null;
+		}
+
+		const L = window.L;
+		const map = L.map(addressMapRef.current).setView([20.5937, 78.9629], 5);
+		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			attribution: "&copy; OpenStreetMap contributors",
+		}).addTo(map);
+
+		let marker = null;
+		map.on("click", async (event) => {
+			try {
+				setAddressError("");
+				const { lat, lng } = event.latlng;
+				if (!marker) {
+					marker = L.marker([lat, lng]).addTo(map);
+				} else {
+					marker.setLatLng([lat, lng]);
+				}
+
+				const details = await reverseGeocodeDetailed(lat, lng);
+				setNewAddressForm((prev) => ({
+					...prev,
+					address: details.fullAddress || details.line1 || prev.address,
+					city: details.city || prev.city,
+					state: details.state || prev.state,
+					pincode: details.pincode || prev.pincode,
+				}));
+				setAddressMessage("Address fields updated from map selection.");
+				setShowAddressMapPicker(false);
+			} catch (error) {
+				setAddressError(error?.message || "Unable to fetch address from map.");
+			}
+		});
+
+		addressMapInstanceRef.current = map;
+		setTimeout(() => map.invalidateSize(), 0);
+	};
+
+	const handleUseCurrentLocationForAddress = async () => {
+		setAddressError("");
+		setAddressMessage("");
+
+		try {
+			setIsDetectingAddressLocation(true);
+			const position = await getCurrentPosition();
+			const { latitude, longitude } = position.coords;
+			const details = await reverseGeocodeDetailed(latitude, longitude);
+
+			setNewAddressForm((prev) => ({
+				...prev,
+				address: details.fullAddress || details.line1 || prev.address,
+				city: details.city || prev.city,
+				state: details.state || prev.state,
+				pincode: details.pincode || prev.pincode,
+			}));
+			setAddressMessage("Address fields updated from current location.");
+		} catch (error) {
+			setAddressError(error?.message || "Unable to fetch current location for address.");
+		} finally {
+			setIsDetectingAddressLocation(false);
+		}
 	};
 
 	const handleProfilePicture = (e) => {
@@ -315,6 +414,7 @@ const CustomerProfile = () => {
 
 			setNewAddressForm(emptyAddressForm);
 			setShowAddAddress(false);
+			setShowAddressMapPicker(false);
 			setAddressMessage("Address added successfully.");
 		} catch (err) {
 			const detail = err?.response?.data?.detail;
@@ -375,9 +475,6 @@ const CustomerProfile = () => {
 	};
 
 	const handleDeleteAddress = async (addressId) => {
-		const confirmed = window.confirm("Are you sure you want to delete this address?");
-		if (!confirmed) return;
-
 		setAddressError("");
 		setAddressMessage("");
 
@@ -386,6 +483,7 @@ const CustomerProfile = () => {
 			await api.delete(`/auth/addresses/${addressId}/`);
 			setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
 			setAddressMessage("Address deleted successfully.");
+			setConfirmDeleteAddressId(null);
 
 			if (editingAddressId === addressId) {
 				setEditingAddressId(null);
@@ -628,6 +726,7 @@ const CustomerProfile = () => {
 							type="button"
 							onClick={() => {
 								setShowAddAddress((prev) => !prev);
+								setShowAddressMapPicker(false);
 								setAddressError("");
 								setAddressMessage("");
 							}}
@@ -656,7 +755,43 @@ const CustomerProfile = () => {
 
 					{showAddAddress && (
 						<form onSubmit={handleCreateAddress} className="mb-10 bg-gray-50/50 dark:bg-gray-900/20 border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-6">
-							<h3 className="text-lg font-bold text-[#111812] dark:text-white mb-5">Add Address</h3>
+							<div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+								<h3 className="text-lg font-bold text-[#111812] dark:text-white">Add Address</h3>
+								<div className="flex flex-col sm:flex-row gap-2">
+									<button
+										type="button"
+										onClick={handleUseCurrentLocationForAddress}
+										disabled={isDetectingAddressLocation}
+										className="inline-flex items-center justify-center rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 disabled:opacity-60 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+									>
+										{isDetectingAddressLocation ? "Fetching..." : "Use Current Location"}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const nextValue = !showAddressMapPicker;
+											setShowAddressMapPicker(nextValue);
+											if (nextValue) {
+												setTimeout(() => initAddressMapPicker(), 0);
+											}
+										}}
+										className="inline-flex items-center justify-center rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 px-4 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 transition-colors"
+									>
+										{showAddressMapPicker ? "Hide Map" : "Choose On Map"}
+									</button>
+								</div>
+							</div>
+							{showAddressMapPicker && (
+								<div className="mb-5">
+									<p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+										Tap on map to auto-fill address, city, state and pincode.
+									</p>
+									<div
+										ref={addressMapRef}
+										className="h-64 w-full rounded-xl border border-gray-200 dark:border-gray-800/60 overflow-hidden"
+									/>
+								</div>
+							)}
 							<div className="grid sm:grid-cols-2 gap-4">
 								<input type="text" name="full_name" value={newAddressForm.full_name} onChange={handleAddressInput(setNewAddressForm)} placeholder="Full Name" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
 								<input type="text" name="phone" value={newAddressForm.phone} onChange={handleAddressInput(setNewAddressForm)} placeholder="Phone" required className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-[#1A241A] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#111812] outline-none transition-all placeholder-gray-400" />
@@ -768,7 +903,7 @@ const CustomerProfile = () => {
 											</button>
 											<button
 												type="button"
-												onClick={() => handleDeleteAddress(addr.id)}
+												onClick={() => setConfirmDeleteAddressId(addr.id)}
 												disabled={isDeletingThis}
 												className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 disabled:opacity-60 text-red-600 dark:text-red-400 text-sm font-bold transition-colors"
 											>
@@ -782,6 +917,44 @@ const CustomerProfile = () => {
 					</div>
 				</section>
 			</div>
+
+			{confirmDeleteAddressId && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+					<div
+						className="absolute inset-0 bg-black/50"
+						onClick={() => {
+							if (!deletingAddressId) {
+								setConfirmDeleteAddressId(null);
+							}
+						}}
+					/>
+					<div className="relative w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111812] p-6 shadow-xl">
+						<h3 className="text-lg font-black text-[#111812] dark:text-[#E8F3EB]">Delete Address</h3>
+						<p className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">
+							Are you sure you want to delete this address?
+						</p>
+
+						<div className="mt-6 flex items-center justify-end gap-3">
+							<button
+								type="button"
+								onClick={() => setConfirmDeleteAddressId(null)}
+								disabled={Boolean(deletingAddressId)}
+								className="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => handleDeleteAddress(confirmDeleteAddressId)}
+								disabled={Boolean(deletingAddressId)}
+								className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-sm font-bold text-white transition-colors"
+							>
+								{deletingAddressId === confirmDeleteAddressId ? "Deleting..." : "Delete"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };
