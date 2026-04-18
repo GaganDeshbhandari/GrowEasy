@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
 
 const initialAddressForm = {
 	address_type: "home",
@@ -15,6 +16,7 @@ const initialAddressForm = {
 
 const Checkout = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     // ==========================================
     // 1. STATE MANAGEMENT (Ready for API integration)
@@ -67,6 +69,7 @@ const Checkout = () => {
                 const delivery_charge = 0; // Assuming free delivery for dummy data
 
                 setCartSummary({
+                    id: cartRes.data?.id,
                     items,
                     subtotal,
                     delivery_charge,
@@ -332,47 +335,73 @@ const Checkout = () => {
         setPaymentLoading(true);
 
         try {
-            // TODO: Call backend to create Razorpay order
-            // POST /api/orders/create/
-            // Body: { cart_id: cart.id, address_id: selectedAddressId }
-            // Returns: { razorpay_order_id, amount, currency, order_id }
-            
-            // Dummy simulation for now
-            setTimeout(() => {
-                
-                // TODO: Replace this block with real Razorpay integration
-                // const options = {
-                //   key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                //   amount: razorpayOrder.amount,
-                //   currency: razorpayOrder.currency,
-                //   order_id: razorpayOrder.razorpay_order_id,
-                //   name: "GrowEasy",
-                //   description: "Fresh farm products",
-                //   handler: async function (response) {
-                //     // TODO: Call verify payment endpoint here
-                //     // On success: setOrderSuccess({ orderId, amount })
-                //   },
-                //   prefill: {
-                //     name: customer.name,
-                //     email: customer.email,
-                //     contact: customer.phone,
-                //   },
-                //   theme: { color: "#16a34a" }
-                // };
-                // const rzp = new window.Razorpay(options);
-                // rzp.open();
+            const response = await api.post('/payments/create-order/', {
+                cart_id: cartSummary.id,
+                address_id: selectedAddressId
+            }, { withCredentials: true });
 
-                // FAKING SUCCESS CALLBACK
-                setOrderSuccess({
-                    orderId: "ORD-" + Math.floor(Math.random() * 1000000),
-                    amount: cartSummary.total
-                });
-                
+            setPaymentLoading(false);
+
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                amount: response.data.amount,
+                currency: response.data.currency,
+                order_id: response.data.razorpay_order_id,
+                name: "GrowEasy",
+                description: "Fresh farm products",
+                handler: async function (razorpayResponse) {
+                    setPaymentLoading(true);
+                    try {
+                        const verifyResponse = await api.post('/payments/verify/', {
+                            razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                            razorpay_order_id: razorpayResponse.razorpay_order_id,
+                            razorpay_signature: razorpayResponse.razorpay_signature,
+                            order_id: response.data.order_id
+                        }, { withCredentials: true });
+
+                        if (verifyResponse.data.success) {
+                            setOrderSuccess({
+                                orderId: verifyResponse.data.order_id,
+                                amount: (response.data.amount / 100).toFixed(2)
+                            });
+                        } else {
+                            setPaymentError("Payment verification failed. Please contact support.");
+                            setPaymentLoading(false);
+                        }
+                    } catch (err) {
+                        setPaymentError("Payment verification failed. Please contact support.");
+                        setPaymentLoading(false);
+                    }
+                },
+                prefill: {
+                    name: user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || ""),
+                    email: user?.email || "",
+                    contact: user?.phone || ""
+                },
+                theme: { 
+                    color: "#16a34a" 
+                },
+                modal: {
+                    ondismiss: function () {
+                        setPaymentLoading(false);
+                        setPaymentError("Payment cancelled. Please try again.");
+                    }
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (res) {
                 setPaymentLoading(false);
-            }, 2000);
+                setPaymentError(res.error.description || "Failed to initiate payment. Please try again.");
+            });
+            rzp.open();
 
-        } catch {
-            setPaymentError("An error occurred while initializing payment.");
+        } catch (error) {
+            const message =
+                error?.response?.data?.detail ||
+                error?.response?.data?.error ||
+                "Failed to initiate payment. Please try again.";
+            setPaymentError(message);
             setPaymentLoading(false);
         }
     };

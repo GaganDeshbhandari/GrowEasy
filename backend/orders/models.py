@@ -34,6 +34,11 @@ class Order(models.Model):
         DELIVERED  = "delivered",  "Delivered"
         CANCELLED  = "cancelled",  "Cancelled"
 
+    class PaymentStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+
     customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name="orders")
 
     # Snapshot of the address at order time
@@ -44,6 +49,10 @@ class Order(models.Model):
     address_state     = models.CharField(max_length=100)
     address_pincode   = models.CharField(max_length=10)
     address_type      = models.CharField(max_length=10)
+
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_status = models.CharField(max_length=20, choices=PaymentStatus.choices, default=PaymentStatus.PENDING)
 
     status      = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)

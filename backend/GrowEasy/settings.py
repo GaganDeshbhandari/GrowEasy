@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "orders",
+    "payments",
 ]
 
 
@@ -195,3 +196,7 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+
+
+RAZORPAY_KEY_ID = os.environ.get("RZP_API_KEY")
+RAZORPAY_KEY_SECRET = os.environ.get("RZP_TEST_KEY")
