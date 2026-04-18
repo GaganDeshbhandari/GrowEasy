@@ -24,7 +24,7 @@ const Checkout = () => {
     const [cartSummary, setCartSummary] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
-    
+
     // Address Form UI State
     const [showAddAddress, setShowAddAddress] = useState(false);
     const [addressForm, setAddressForm] = useState(initialAddressForm);
@@ -49,7 +49,7 @@ const Checkout = () => {
     const [netBankingBank, setNetBankingBank] = useState("");
 
     // ==========================================
-    // 2. DATA FETCHING 
+    // 2. DATA FETCHING
     // ==========================================
     useEffect(() => {
         const fetchCheckoutData = async () => {
@@ -57,7 +57,7 @@ const Checkout = () => {
                 // TODO: Fetch cart summary
                 // GET /api/cart/
                 const cartRes = await api.get("/orders/cart/");
-                
+
                 // We extract totals assuming they map to cartSummary requirements
                 const items = cartRes.data?.items || [];
                 if (items.length === 0) {
@@ -85,7 +85,7 @@ const Checkout = () => {
                     : Array.isArray(addressPayload?.results)
                         ? addressPayload.results
                         : [];
-                
+
                 setAddresses(addressList);
                 const defaultAddress = addressList.find((addr) => addr.is_default);
                 setSelectedAddressId(defaultAddress ? defaultAddress.id : (addressList[0]?.id ?? null));
@@ -285,7 +285,7 @@ const Checkout = () => {
                 setPaymentError("Please enter a valid UPI ID (e.g. yourname@upi).");
                 return false;
             }
-        } 
+        }
         else if (selectedPaymentMethod === "card") {
             const rawCardNum = cardForm.number.replace(/\s/g, '');
             if (rawCardNum.length !== 16) {
@@ -304,7 +304,7 @@ const Checkout = () => {
                 setPaymentError("CVV must be exactly 3 digits.");
                 return false;
             }
-        } 
+        }
         else if (selectedPaymentMethod === "netbanking") {
             if (!netBankingBank) {
                 setPaymentError("Please select a bank for Net Banking.");
@@ -318,9 +318,9 @@ const Checkout = () => {
         if (!selectedAddressId || !cartSummary) return false;
         if (selectedPaymentMethod === "upi") return upiForm.includes("@");
         if (selectedPaymentMethod === "card") {
-            return cardForm.number.replace(/\s/g, '').length === 16 && 
-                   cardForm.name.trim() !== "" && 
-                   cardForm.expiry.length === 5 && 
+            return cardForm.number.replace(/\s/g, '').length === 16 &&
+                   cardForm.name.trim() !== "" &&
+                   cardForm.expiry.length === 5 &&
                    cardForm.cvv.length === 3;
         }
         if (selectedPaymentMethod === "netbanking") return netBankingBank !== "";
@@ -329,7 +329,7 @@ const Checkout = () => {
 
     const handlePayment = async () => {
         setPaymentError(null);
-        
+
         if (!validatePayment()) return;
 
         setPaymentLoading(true);
@@ -378,8 +378,8 @@ const Checkout = () => {
                     email: user?.email || "",
                     contact: user?.phone || ""
                 },
-                theme: { 
-                    color: "#16a34a" 
+                theme: {
+                    color: "#16a34a"
                 },
                 modal: {
                     ondismiss: function () {
@@ -436,7 +436,7 @@ const Checkout = () => {
                     </div>
                     <h2 className="text-3xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-2">Payment Successful!</h2>
                     <p className="text-gray-500 dark:text-gray-400 font-medium mb-6">Your order has been placed securely.</p>
-                    
+
                     <div className="bg-gray-50 dark:bg-[#1A241A] rounded-[20px] p-5 mb-8 border border-gray-100 dark:border-gray-800 flex flex-col items-center gap-2">
                         <div className="w-full flex justify-between">
                             <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">Order ID</span>
@@ -467,7 +467,7 @@ const Checkout = () => {
     return (
         <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
+
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                     <div>
                         <Link to="/cart" className="inline-flex items-center gap-2 text-xs font-black text-gray-400 hover:text-[#111812] dark:hover:text-white uppercase tracking-widest transition-colors mb-3 group">
@@ -483,7 +483,7 @@ const Checkout = () => {
                 <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
                     {/* LEFT COLUMN: Order Summary (60%) + Delivery Address */}
                     <div className="lg:col-span-7 flex flex-col gap-8">
-                        
+
                         {/* ======================= ORDER SUMMARY ======================= */}
                         <section className="bg-white dark:bg-[#111812] rounded-[24px] border border-gray-100 dark:border-gray-800/60 p-6 sm:p-8 shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
                             <div className="flex items-center gap-3 mb-6">
@@ -522,7 +522,7 @@ const Checkout = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    
+
                                     <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-200 dark:border-gray-800 flex flex-col gap-2">
                                         <div className="flex justify-between text-sm font-bold text-gray-500 dark:text-gray-400">
                                             <span>Subtotal</span>
@@ -673,7 +673,7 @@ const Checkout = () => {
                     {/* RIGHT COLUMN: Payment Section (40%) */}
                     <aside className="lg:col-span-5">
                         <div className="bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-6 sm:p-8 shadow-[0_4px_20px_rgb(0,0,0,0.02)] sticky top-[104px]">
-                            
+
                             {/* Break Down */}
                             <div className="bg-gray-50 dark:bg-[#1A241A]/50 rounded-[20px] p-6 mb-8 border border-gray-200/50 dark:border-gray-800">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-4">Price Breakdown</h3>
@@ -766,14 +766,14 @@ const Checkout = () => {
                                     )}
                                 </div>
                             </div>
-                    
+
                             {/* Pay Button */}
                             <button
                                 onClick={handlePayment}
                                 disabled={paymentLoading || !isPaymentFormValid()}
                                 className={`w-full py-5 px-6 rounded-[20px] shadow-sm transition-all flex items-center justify-center gap-2 font-black text-lg ${
-                                    paymentLoading || !isPaymentFormValid() 
-                                        ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70" 
+                                    paymentLoading || !isPaymentFormValid()
+                                        ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70"
                                         : "bg-emerald-600 hover:bg-emerald-500 text-white active:scale-[0.98]"
                                 }`}
                             >
@@ -789,7 +789,7 @@ const Checkout = () => {
                                     </>
                                 )}
                             </button>
-                            
+
                             {/* Error Inline Message */}
                             {paymentError && (
                                 <p className="mt-4 text-center text-sm font-bold text-red-500 animate-in fade-in slide-in-from-top-1">

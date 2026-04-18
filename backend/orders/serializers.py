@@ -72,14 +72,22 @@ on Order
 
 class OrderItemSerializer(serializers.ModelSerializer):
     total = serializers.SerializerMethodField()
+    farmer_id = serializers.SerializerMethodField()
+    farmer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'product_price', 'quantity', 'total']
-        read_only_fields = ['product', 'product_name', 'product_price', 'quantity','total']
+        fields = ['id', 'product', 'product_name', 'product_price', 'quantity', 'total', 'farmer_id', 'farmer_name']
+        read_only_fields = ['product', 'product_name', 'product_price', 'quantity','total', 'farmer_id', 'farmer_name']
 
     def get_total(self, obj):
         return obj.total
+        
+    def get_farmer_id(self, obj):
+        return obj.product.farmer.id if obj.product and obj.product.farmer else None
+        
+    def get_farmer_name(self, obj):
+        return obj.product.farmer.user.fullname if obj.product and obj.product.farmer and obj.product.farmer.user else "Verified Farmer"
 
 
 # 4. OrderSerializer
