@@ -1,11 +1,24 @@
 from django.contrib import admin
-from .models import *
+from .models import (
+	Address,
+	CustomUser,
+	CustomerProfile,
+	FarmerCertification,
+	FarmerProfile,
+	FarmerRating,
+	FarmerBankDetail
+)
 
-# Register your models here.
-admin.site.register(CustomUser)
-admin.site.register(FarmerProfile)
-admin.site.register(CustomerProfile)
-admin.site.register(Address)
-admin.site.register(FarmerRating)
-admin.site.register(FarmerCertification)
-# admin.site.register()
+
+def register_if_needed(model):
+	if model not in admin.site._registry:
+		admin.site.register(model)
+
+
+register_if_needed(CustomUser)
+register_if_needed(FarmerProfile)
+register_if_needed(CustomerProfile)
+register_if_needed(Address)
+register_if_needed(FarmerRating)
+register_if_needed(FarmerCertification)
+register_if_needed(FarmerBankDetail)

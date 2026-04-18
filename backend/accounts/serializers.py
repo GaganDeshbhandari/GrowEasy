@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 
-from .models import CustomUser, FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification
+from .models import CustomUser, FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification, FarmerBankDetail
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     # write only make sure that Serializer only takes the input
@@ -205,3 +205,53 @@ class ResetPasswordSerializer(serializers.Serializer):
         if data['new_password'] != data['confirm_password']:
             raise serializers.ValidationError("Passwords don't match")
         return data
+
+
+class FarmerBankDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FarmerBankDetail
+        fields = [
+            'id', 'farmer', 'type',
+            'account_holder_name', 'bank_name',
+            'account_number', 'ifsc_code',
+            'upi_id', 'is_primary', 'created_at'
+        ]
+        read_only_fields = ['id', 'farmer', 'created_at']
+
+    def validate(self, data):
+        payment_type = data.get('type', getattr(self.instance, 'type', None))
+
+        if payment_type == 'bank':
+            required = {
+                'account_holder_name': 'Account holder name',
+                'bank_name': 'Bank name',
+                'account_number': 'Account number',
+                'ifsc_code': 'IFSC code',
+            }
+            for field, label in required.items():
+                value = data.get(field, getattr(self.instance, field, None) if self.instance else None)
+                if not value or not str(value).strip():
+                    raise serializers.ValidationError({field: f"{label} is required for bank type."})
+
+            ifsc = data.get('ifsc_code', getattr(self.instance, 'ifsc_code', None) if self.instance else None)
+            if ifsc and len(ifsc.strip()) != 11:
+                raise serializers.ValidationError({'ifsc_code': "IFSC code must be exactly 11 characters."})
+
+        elif payment_type == 'upi':
+            upi = data.get('upi_id', getattr(self.instance, 'upi_id', None) if self.instance else None)
+            if not upi or not str(upi).strip():
+                raise serializers.ValidationError({'upi_id': "UPI ID is required for UPI type."})
+            if '@' not in upi:
+                raise serializers.ValidationError({'upi_id': "UPI ID must contain '@'."})
+
+        return data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        raw = instance.account_number
+        if raw and len(raw) > 4:
+            data['account_number'] = 'X' * (len(raw) - 4) + raw[-4:]
+        elif raw:
+            data['account_number'] = raw
+        return data
+

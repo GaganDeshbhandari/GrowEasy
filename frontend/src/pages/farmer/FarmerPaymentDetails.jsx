@@ -1,30 +1,9 @@
-import { useState } from "react";
-
-const dummyBankDetails = [
-  {
-    id: 1,
-    type: "bank",
-    account_holder_name: "Ravi Kumar",
-    bank_name: "State Bank of India",
-    account_number: "XXXXXXXX4321",
-    ifsc_code: "SBIN0001234",
-    upi_id: null,
-    is_primary: true,
-  },
-  {
-    id: 2,
-    type: "upi",
-    account_holder_name: null,
-    bank_name: null,
-    account_number: null,
-    ifsc_code: null,
-    upi_id: "ravi.kumar@upi",
-    is_primary: false,
-  }
-];
+import { useEffect, useState } from "react";
+import api from "../../api/axios";
 
 const FarmerPaymentDetails = () => {
-    const [paymentMethods, setPaymentMethods] = useState(dummyBankDetails);
+    const [paymentMethods, setPaymentMethods] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [activeTab, setActiveTab] = useState("bank"); // "bank" or "upi"
     const [message, setMessage] = useState("");
@@ -52,30 +31,85 @@ const FarmerPaymentDetails = () => {
         }, 3000);
     };
 
-    const handleSetPrimary = (id) => {
-        setPaymentMethods(prev => 
-            prev.map(method => ({
-                ...method,
-                is_primary: method.id === id
-            }))
-        );
-        showMessage("Primary payment method updated");
+    const getBackendErrorMessage = (err, fallback = "Something went wrong. Please try again.") => {
+        const data = err?.response?.data;
+
+        if (typeof data === "string" && data.trim()) return data;
+        if (typeof data?.detail === "string" && data.detail.trim()) return data.detail;
+        if (typeof data?.message === "string" && data.message.trim()) return data.message;
+
+        if (Array.isArray(data) && data.length > 0) {
+            const first = data[0];
+            if (typeof first === "string") return first;
+        }
+
+        if (data && typeof data === "object") {
+            const firstValue = Object.values(data)[0];
+            if (Array.isArray(firstValue) && firstValue.length > 0 && typeof firstValue[0] === "string") {
+                return firstValue[0];
+            }
+            if (typeof firstValue === "string") return firstValue;
+        }
+
+        if (typeof err?.message === "string" && err.message.trim()) return err.message;
+        return fallback;
     };
 
-    const handleDelete = (id) => {
-        const methodToDelete = paymentMethods.find(m => m.id === id);
-        if (methodToDelete?.is_primary) {
-            showMessage("Cannot delete the primary payment method", true);
-            return;
+    const fetchPaymentMethods = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get("/auth/farmer/bank-details/");
+            const methods = Array.isArray(response?.data)
+                ? response.data
+                : Array.isArray(response?.data?.results)
+                    ? response.data.results
+                    : [];
+            setPaymentMethods(methods);
+            setError("");
+            return true;
+        } catch (err) {
+            setError(getBackendErrorMessage(err, "Failed to load payment details."));
+            return false;
+        } finally {
+            setLoading(false);
         }
-        
+    };
+
+    useEffect(() => {
+        fetchPaymentMethods();
+    }, []);
+
+    const handleSetPrimary = async (id) => {
+        setMessage("");
+        setError("");
+        try {
+            await api.patch(`/auth/farmer/bank-details/${id}/set-primary/`);
+            const ok = await fetchPaymentMethods();
+            if (ok) showMessage("Primary payment method updated");
+        } catch (err) {
+            showMessage(getBackendErrorMessage(err, "Failed to set primary payment method."), true);
+        }
+    };
+
+    const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this payment detail?")) {
-            setPaymentMethods(prev => prev.filter(m => m.id !== id));
-            showMessage("Payment method deleted successfully");
+            setMessage("");
+            setError("");
+            try {
+                await api.delete(`/auth/farmer/bank-details/${id}/`);
+                const ok = await fetchPaymentMethods();
+                if (ok) showMessage("Payment method deleted successfully");
+            } catch (err) {
+                if (err?.response?.status === 400) {
+                    showMessage(getBackendErrorMessage(err, "Unable to delete payment method."), true);
+                    return;
+                }
+                showMessage(getBackendErrorMessage(err, "Failed to delete payment method."), true);
+            }
         }
     };
 
-    const handleBankSubmit = (e) => {
+    const handleBankSubmit = async (e) => {
         e.preventDefault();
         setMessage("");
         setError("");
@@ -90,24 +124,28 @@ const FarmerPaymentDetails = () => {
             return;
         }
 
-        const newEntry = {
-            id: Date.now(),
-            type: "bank",
-            account_holder_name: bankForm.account_holder_name,
-            bank_name: bankForm.bank_name,
-            account_number: bankForm.account_number.slice(-4).padStart(bankForm.account_number.length, "X"),
-            ifsc_code: bankForm.ifsc_code.toUpperCase(),
-            upi_id: null,
-            is_primary: paymentMethods.length === 0,
-        };
+        try {
+            await api.post("/auth/farmer/bank-details/", {
+                type: "bank",
+                account_holder_name: bankForm.account_holder_name,
+                bank_name: bankForm.bank_name,
+                account_number: bankForm.account_number,
+                ifsc_code: bankForm.ifsc_code.toUpperCase(),
+                upi_id: "",
+            });
 
-        setPaymentMethods(prev => [...prev, newEntry]);
-        setBankForm({ account_holder_name: "", bank_name: "", account_number: "", confirm_account_number: "", ifsc_code: "" });
-        setShowAddForm(false);
-        showMessage("Bank account added successfully");
+            const ok = await fetchPaymentMethods();
+            if (!ok) return;
+
+            setBankForm({ account_holder_name: "", bank_name: "", account_number: "", confirm_account_number: "", ifsc_code: "" });
+            setShowAddForm(false);
+            showMessage("Bank account added successfully");
+        } catch (err) {
+            showMessage(getBackendErrorMessage(err, "Failed to add bank account."), true);
+        }
     };
 
-    const handleUpiSubmit = (e) => {
+    const handleUpiSubmit = async (e) => {
         e.preventDefault();
         setMessage("");
         setError("");
@@ -117,21 +155,25 @@ const FarmerPaymentDetails = () => {
             return;
         }
 
-        const newEntry = {
-            id: Date.now(),
-            type: "upi",
-            account_holder_name: null,
-            bank_name: null,
-            account_number: null,
-            ifsc_code: null,
-            upi_id: upiForm.upi_id,
-            is_primary: paymentMethods.length === 0,
-        };
+        try {
+            await api.post("/auth/farmer/bank-details/", {
+                type: "upi",
+                upi_id: upiForm.upi_id,
+                account_holder_name: "",
+                bank_name: "",
+                account_number: "",
+                ifsc_code: "",
+            });
 
-        setPaymentMethods(prev => [...prev, newEntry]);
-        setUpiForm({ upi_id: "" });
-        setShowAddForm(false);
-        showMessage("UPI ID added successfully");
+            const ok = await fetchPaymentMethods();
+            if (!ok) return;
+
+            setUpiForm({ upi_id: "" });
+            setShowAddForm(false);
+            showMessage("UPI ID added successfully");
+        } catch (err) {
+            showMessage(getBackendErrorMessage(err, "Failed to add UPI ID."), true);
+        }
     };
 
     return (
@@ -162,7 +204,7 @@ const FarmerPaymentDetails = () => {
                     {message}
                 </div>
             )}
-            
+
             {error && (
                 <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-800/50 text-red-700 dark:text-red-400 text-sm font-bold rounded-[16px] px-5 py-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
                     <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -198,7 +240,7 @@ const FarmerPaymentDetails = () => {
                                         onChange={(e) => setBankForm({ ...bankForm, account_holder_name: e.target.value })}
                                         placeholder="Name on Bank Account"
                                         required
-                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all shadow-sm"
+                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-1.5 sm:col-span-2">
@@ -209,7 +251,7 @@ const FarmerPaymentDetails = () => {
                                         onChange={(e) => setBankForm({ ...bankForm, bank_name: e.target.value })}
                                         placeholder="E.g., State Bank of India"
                                         required
-                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all shadow-sm"
+                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -220,18 +262,18 @@ const FarmerPaymentDetails = () => {
                                         onChange={(e) => setBankForm({ ...bankForm, account_number: e.target.value })}
                                         placeholder="••••••••••••"
                                         required
-                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all shadow-sm"
+                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">Confirm Account Number</label>
                                     <input
-                                        type="password"
+                                        type="text"
                                         value={bankForm.confirm_account_number}
                                         onChange={(e) => setBankForm({ ...bankForm, confirm_account_number: e.target.value })}
-                                        placeholder="••••••••••••"
+                                        placeholder="1234567890"
                                         required
-                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all shadow-sm"
+                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-1.5 sm:col-span-2">
@@ -243,7 +285,7 @@ const FarmerPaymentDetails = () => {
                                         placeholder="SBIN0001234"
                                         required
                                         maxLength={11}
-                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all uppercase shadow-sm"
+                                        className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all uppercase shadow-sm"
                                     />
                                 </div>
                             </div>
@@ -266,7 +308,7 @@ const FarmerPaymentDetails = () => {
                                     onChange={(e) => setUpiForm({ upi_id: e.target.value.toLowerCase() })}
                                     placeholder="username@bank"
                                     required
-                                    className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all shadow-sm"
+                                    className="w-full px-5 py-3.5 rounded-[16px] border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#111812] text-[#111812] dark:text-white font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#1A241A] transition-all shadow-sm"
                                 />
                             </div>
                             <div className="flex justify-end pt-2">
@@ -282,7 +324,31 @@ const FarmerPaymentDetails = () => {
                 </div>
             )}
 
-            {paymentMethods.length === 0 ? (
+            {loading ? (
+                <div className="grid gap-5">
+                    {[1, 2, 3].map((idx) => (
+                        <div
+                            key={idx}
+                            className="border-2 border-gray-100 dark:border-gray-800/60 bg-white dark:bg-[#1A241A]/50 rounded-[24px] p-6 sm:p-8 shadow-sm animate-pulse"
+                        >
+                            <div className="flex items-start justify-between gap-6">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700 shrink-0" />
+                                    <div className="flex-1 space-y-3">
+                                        <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+                                        <div className="h-6 w-52 rounded bg-gray-200 dark:bg-gray-700" />
+                                        <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2 w-28">
+                                    <div className="h-8 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                                    <div className="h-8 rounded-xl bg-gray-200 dark:bg-gray-700" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : paymentMethods.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center rounded-[24px] border-2 border-dashed border-gray-200 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#111812]">
                     <div className="w-16 h-16 bg-white dark:bg-gray-800/50 rounded-full flex items-center justify-center mb-4 shadow-sm">
                         <svg className="w-8 h-8 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -295,11 +361,11 @@ const FarmerPaymentDetails = () => {
             ) : (
                 <div className="grid gap-5">
                     {paymentMethods.map(method => (
-                        <div 
-                            key={method.id} 
+                        <div
+                            key={method.id}
                             className={`relative border-2 rounded-[24px] p-6 sm:p-8 transition-all duration-300 shadow-sm ${
-                                method.is_primary 
-                                    ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' 
+                                method.is_primary
+                                    ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10'
                                     : 'border-gray-100 dark:border-gray-800/60 bg-white dark:bg-[#1A241A]/50 hover:border-emerald-200 dark:hover:border-emerald-800/50'
                             }`}
                         >
@@ -314,12 +380,12 @@ const FarmerPaymentDetails = () => {
                                 <div className="flex items-start gap-4">
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${method.is_primary ? 'bg-emerald-100 dark:bg-emerald-800 text-emerald-600 dark:text-emerald-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
                                         {method.type === 'bank' ? (
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18" /></svg> // Bank icon approximation 
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18" /></svg>
                                         ) : (
                                             <span className="font-black text-xs tracking-wider">UPI</span>
                                         )}
                                     </div>
-                                    
+
                                     <div>
                                         <div className="flex items-center gap-2 mb-1.5">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md">
@@ -349,8 +415,8 @@ const FarmerPaymentDetails = () => {
                                         onClick={() => handleSetPrimary(method.id)}
                                         disabled={method.is_primary}
                                         className={`px-4 py-2 text-xs font-bold rounded-xl transition-all w-full sm:w-auto text-center ${
-                                            method.is_primary 
-                                                ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50' 
+                                            method.is_primary
+                                                ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
                                                 : 'bg-white dark:bg-[#111812] border-2 border-emerald-200 dark:border-emerald-800 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 active:scale-95 shadow-sm'
                                         }`}
                                     >

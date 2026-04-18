@@ -151,6 +151,35 @@ class FarmerCertification(models.Model):
       return f"{self.title} - {self.farmer.user.fullname}"
 
 
+class FarmerBankDetail(models.Model):
+    class PaymentType(models.TextChoices):
+        BANK = 'bank', 'Bank'
+        UPI = 'upi', 'UPI'
+
+    farmer = models.ForeignKey(FarmerProfile, on_delete=models.CASCADE, related_name='bank_details')
+    type = models.CharField(max_length=10, choices=PaymentType.choices)
+    account_holder_name = models.CharField(max_length=200, blank=True)
+    bank_name = models.CharField(max_length=200, blank=True)
+    account_number = models.CharField(max_length=50, blank=True)
+    ifsc_code = models.CharField(max_length=11, blank=True)
+    upi_id = models.CharField(max_length=100, blank=True)
+    is_primary = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            FarmerBankDetail.objects.filter(
+                farmer=self.farmer,
+                is_primary=True
+            ).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        if self.type == 'bank':
+            return f"Bank: {self.bank_name} ({self.farmer.user.fullname})"
+        return f"UPI: {self.upi_id} ({self.farmer.user.fullname})"
+
+
 class PasswordResetToken(models.Model):
    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='password_reset_tokens')
    otp= models.CharField(max_length=6)

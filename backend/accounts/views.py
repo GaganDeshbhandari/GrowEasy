@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
@@ -19,11 +20,12 @@ from .serializers import (
   FarmerRatingSerializer,
   FarmerCertificationSerializer,
   FarmerPublicProfileSerializer,
+  FarmerBankDetailSerializer,
   ForgotPasswordSerializer,
   ResetPasswordSerializer
 )
 from .permissions import FarmerPermission, CustomerPermission
-from .models import FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification, PasswordResetToken, CustomUser
+from .models import FarmerProfile, CustomerProfile, Address, FarmerRating, FarmerCertification, FarmerBankDetail, PasswordResetToken, CustomUser
 
 
 # APIView is more preferred for auth opertaions
@@ -285,6 +287,56 @@ class FarmerCertificationDetailView(generics.RetrieveUpdateDestroyAPIView):
 
   def get_queryset(self):
     return FarmerCertification.objects.filter(farmer__user=self.request.user)
+
+
+class FarmerBankDetailListCreateView(generics.ListCreateAPIView):
+  serializer_class = FarmerBankDetailSerializer
+  permission_classes = [permissions.IsAuthenticated, FarmerPermission]
+  pagination_class = None
+
+  def get_queryset(self):
+    return FarmerBankDetail.objects.filter(farmer__user=self.request.user).order_by('-is_primary', '-created_at')
+
+  def perform_create(self, serializer):
+    serializer.save(farmer=self.request.user.farmerprofile)
+
+
+class FarmerBankDetailDetailView(generics.RetrieveUpdateDestroyAPIView):
+  serializer_class = FarmerBankDetailSerializer
+  permission_classes = [permissions.IsAuthenticated, FarmerPermission]
+
+  def get_queryset(self):
+    return FarmerBankDetail.objects.filter(farmer__user=self.request.user)
+
+  def destroy(self, request, *args, **kwargs):
+    instance = self.get_object()
+
+    if instance.is_primary:
+      return Response(
+        {'detail': 'Cannot delete primary payment detail. Set another as primary first.'},
+        status=status.HTTP_400_BAD_REQUEST
+      )
+
+    self.perform_destroy(instance)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FarmerBankDetailSetPrimaryView(APIView):
+  permission_classes = [permissions.IsAuthenticated, FarmerPermission]
+
+  def patch(self, request, pk):
+    farmer_profile = request.user.farmerprofile
+    bank_detail = FarmerBankDetail.objects.filter(farmer=farmer_profile, pk=pk).first()
+
+    if not bank_detail:
+      return Response({'detail': 'Payment detail not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    with transaction.atomic():
+      FarmerBankDetail.objects.filter(farmer=farmer_profile, is_primary=True).update(is_primary=False)
+      bank_detail.is_primary = True
+      bank_detail.save(update_fields=['is_primary'])
+
+    return Response(FarmerBankDetailSerializer(bank_detail).data, status=status.HTTP_200_OK)
 
 
 class ForgotPasswordView(APIView):
