@@ -863,33 +863,38 @@ const CustomerProfile = () => {
 							}
 
 							return (
-								<div key={addr.id} className="border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-5 sm:p-6 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition-colors shadow-sm">
-									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+								<div key={addr.id} className={`group bg-gray-50 dark:bg-[#1A241A] rounded-[32px] border border-transparent dark:border-gray-800 p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:border-emerald-900/40 transition-all duration-300 relative overflow-hidden ${addr.is_default ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 ring-1 ring-emerald-500/50' : ''}`}>
+									
+									{addr.is_default && <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500 transition-colors duration-500"></div>}
+									{!addr.is_default && <div className="absolute top-0 left-0 w-1.5 h-full bg-gray-200 dark:bg-gray-800 group-hover:bg-emerald-500 transition-colors duration-500"></div>}
+
+									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6 pl-2 sm:pl-4">
 										<div>
-											<p className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] leading-tight">
+											<p className="text-xl sm:text-2xl font-black text-[#111812] dark:text-[#E8F3EB] leading-tight tracking-tight flex items-center gap-3">
 												{addr.full_name}
-												<span className="ml-2 text-xs font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full uppercase tracking-wider">
+												<span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 shadow-sm px-2.5 py-1 rounded-full uppercase tracking-widest">
 													{addr.address_type}
 												</span>
 											</p>
-											<p className="text-sm font-medium text-gray-600 dark:text-gray-400 mt-2">{addr.phone}</p>
-											<p className="text-sm font-medium text-gray-600 dark:text-gray-400 mt-1">
+											<p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-3">{addr.phone}</p>
+											<p className="text-sm font-medium text-gray-600 dark:text-gray-400 mt-1 max-w-md text-balance leading-relaxed">
 												{addr.address}, {addr.city}, {addr.state} - {addr.pincode}
 											</p>
 											{addr.is_default && (
-												<span className="inline-block mt-3 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
-													✓ Default Address
+												<span className="inline-flex mt-4 items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100/50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 tracking-wider">
+													<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+													DEFAULT ADDRESS
 												</span>
 											)}
 										</div>
 
-										<div className="flex flex-wrap gap-2">
+										<div className="flex flex-wrap gap-2 pt-2 shrink-0">
 											{!addr.is_default && (
 												<button
 													type="button"
 													onClick={() => handleSetDefault(addr.id)}
 													disabled={isSettingDefaultThis}
-													className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 text-gray-700 dark:text-gray-300 text-sm font-bold transition-colors"
+													className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 shadow-sm hover:bg-emerald-50 dark:hover:border-emerald-500/50 hover:text-emerald-600 disabled:opacity-60 text-gray-700 dark:text-gray-300 text-xs font-extrabold uppercase tracking-widest transition-all"
 												>
 													{isSettingDefaultThis ? "Setting..." : "Set Default"}
 												</button>
@@ -897,7 +902,7 @@ const CustomerProfile = () => {
 											<button
 												type="button"
 												onClick={() => startEditAddress(addr)}
-												className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-sm font-bold transition-colors"
+												className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 shadow-sm hover:border-emerald-500 hover:text-emerald-600 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400 text-gray-700 dark:text-gray-300 text-xs font-extrabold uppercase tracking-widest transition-all"
 											>
 												Edit
 											</button>
@@ -905,9 +910,9 @@ const CustomerProfile = () => {
 												type="button"
 												onClick={() => setConfirmDeleteAddressId(addr.id)}
 												disabled={isDeletingThis}
-												className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 disabled:opacity-60 text-red-600 dark:text-red-400 text-sm font-bold transition-colors"
+												className="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 disabled:opacity-60 text-red-600 dark:text-red-400 text-xs font-extrabold uppercase tracking-widest transition-all"
 											>
-												{isDeletingThis ? "Deleting..." : "Delete"}
+												{isDeletingThis ? "..." : "Delete"}
 											</button>
 										</div>
 									</div>
@@ -919,37 +924,40 @@ const CustomerProfile = () => {
 			</div>
 
 			{confirmDeleteAddressId && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 					<div
-						className="absolute inset-0 bg-black/50"
+						className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
 						onClick={() => {
 							if (!deletingAddressId) {
 								setConfirmDeleteAddressId(null);
 							}
 						}}
 					/>
-					<div className="relative w-full max-w-md rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111812] p-6 shadow-xl">
-						<h3 className="text-lg font-black text-[#111812] dark:text-[#E8F3EB]">Delete Address</h3>
-						<p className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">
-							Are you sure you want to delete this address?
+					<div className="relative w-full max-w-sm rounded-[32px] border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111812] p-8 shadow-2xl scale-100 transition-transform">
+						<div className="w-12 h-12 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+							<svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+						</div>
+						<h3 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-2">Delete Address</h3>
+						<p className="text-base font-medium text-gray-500 dark:text-gray-400">
+							Are you sure you want to completely remove this address? This cannot be undone.
 						</p>
 
-						<div className="mt-6 flex items-center justify-end gap-3">
-							<button
-								type="button"
-								onClick={() => setConfirmDeleteAddressId(null)}
-								disabled={Boolean(deletingAddressId)}
-								className="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-60 text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors"
-							>
-								Cancel
-							</button>
+						<div className="mt-8 flex flex-col gap-3">
 							<button
 								type="button"
 								onClick={() => handleDeleteAddress(confirmDeleteAddressId)}
 								disabled={Boolean(deletingAddressId)}
-								className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-sm font-bold text-white transition-colors"
+								className="w-full px-5 py-3.5 rounded-2xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-sm font-bold text-white transition-colors shadow-sm"
 							>
-								{deletingAddressId === confirmDeleteAddressId ? "Deleting..." : "Delete"}
+								{deletingAddressId === confirmDeleteAddressId ? "Deleting..." : "Yes, Delete It"}
+							</button>
+							<button
+								type="button"
+								onClick={() => setConfirmDeleteAddressId(null)}
+								disabled={Boolean(deletingAddressId)}
+								className="w-full px-5 py-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 dark:bg-[#1A241A] dark:hover:bg-gray-800 disabled:opacity-60 text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors"
+							>
+								Nevermind
 							</button>
 						</div>
 					</div>
