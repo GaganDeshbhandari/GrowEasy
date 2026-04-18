@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { resolveMediaUrl } from "../../utils/media";
+import FarmerPaymentDetails from "./FarmerPaymentDetails";
 
 const emptyCertificationForm = {
 	certificate_name: "",
@@ -1000,6 +1001,10 @@ const FarmerProfile = () => {
 					</div>
 				)}
 			</section>
+			
+			{/* Payment Details Section */}
+			<FarmerPaymentDetails />
+
 			</div>
 		</div>
 	);
