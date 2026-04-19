@@ -90,7 +90,9 @@ const CustomerProfile = () => {
 			});
 			if (profileData.latitude && profileData.longitude) {
 				setLocationCoords({ latitude: profileData.latitude, longitude: profileData.longitude });
-				setDetectedLocation(`Lat ${profileData.latitude}, Lng ${profileData.longitude}`);
+				reverseGeocode(profileData.latitude, profileData.longitude)
+					.then((loc) => setDetectedLocation(loc || `Lat ${profileData.latitude}, Lng ${profileData.longitude}`))
+					.catch(() => setDetectedLocation(`Lat ${profileData.latitude}, Lng ${profileData.longitude}`));
 			}
 		} catch {
 			setProfileError("Failed to load profile details. Please try again.");
@@ -898,7 +900,7 @@ const CustomerProfile = () => {
 
 							return (
 								<div key={addr.id} className={`group bg-gray-50 dark:bg-[#1A241A] rounded-[32px] border border-transparent dark:border-gray-800 p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:border-emerald-900/40 transition-all duration-300 relative overflow-hidden ${addr.is_default ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 ring-1 ring-emerald-500/50' : ''}`}>
-									
+
 									{addr.is_default && <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500 transition-colors duration-500"></div>}
 									{!addr.is_default && <div className="absolute top-0 left-0 w-1.5 h-full bg-gray-200 dark:bg-gray-800 group-hover:bg-emerald-500 transition-colors duration-500"></div>}
 
