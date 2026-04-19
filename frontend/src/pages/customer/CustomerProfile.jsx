@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import { resolveMediaUrl } from "../../utils/media";
@@ -15,7 +16,9 @@ const emptyAddressForm = {
 };
 
 const CustomerProfile = () => {
-	const { user, login } = useAuth();
+	const { user, login, updateLocationInContext } = useAuth();
+	const location = useLocation();
+	const navigate = useNavigate();
 
 	const [loading, setLoading] = useState(true);
 
@@ -32,6 +35,7 @@ const CustomerProfile = () => {
 	const [profileMessage, setProfileMessage] = useState("");
 	const [profileError, setProfileError] = useState("");
 	const [detectedLocation, setDetectedLocation] = useState("");
+	const [locationCoords, setLocationCoords] = useState(null);
 	const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 	const [locationDetectError, setLocationDetectError] = useState("");
 	const [showMapPicker, setShowMapPicker] = useState(false);
@@ -84,6 +88,10 @@ const CustomerProfile = () => {
 				email: user?.email || "",
 				phone: user?.phone || "",
 			});
+			if (profileData.latitude && profileData.longitude) {
+				setLocationCoords({ latitude: profileData.latitude, longitude: profileData.longitude });
+				setDetectedLocation(`Lat ${profileData.latitude}, Lng ${profileData.longitude}`);
+			}
 		} catch {
 			setProfileError("Failed to load profile details. Please try again.");
 		} finally {
@@ -215,6 +223,7 @@ const CustomerProfile = () => {
 			const { latitude, longitude } = position.coords;
 			const locationLabel = await reverseGeocode(latitude, longitude);
 			setDetectedLocation(locationLabel || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+			setLocationCoords({ latitude: latitude.toFixed(6), longitude: longitude.toFixed(6) });
 		} catch (error) {
 			setLocationDetectError(error?.message || "Unable to fetch location. Please try again.");
 		} finally {
@@ -248,6 +257,7 @@ const CustomerProfile = () => {
 				}
 				const locationLabel = await reverseGeocode(lat, lng);
 				setDetectedLocation(locationLabel || `Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`);
+				setLocationCoords({ latitude: lat.toFixed(6), longitude: lng.toFixed(6) });
 				setShowMapPicker(false);
 			} catch (error) {
 				setLocationDetectError(error?.message || "Unable to set location from map.");
@@ -358,6 +368,10 @@ const CustomerProfile = () => {
 			} else if (removePicture) {
 				formData.append("picture", "");
 			}
+			if (locationCoords) {
+				formData.append("latitude", locationCoords.latitude);
+				formData.append("longitude", locationCoords.longitude);
+			}
 
 			const res = await api.patch("/auth/customer/profile/", formData, {
 				headers: {
@@ -378,6 +392,16 @@ const CustomerProfile = () => {
 					email: profileForm.email,
 					phone: profileForm.phone,
 				});
+				if (locationCoords) {
+					updateLocationInContext(locationCoords.latitude, locationCoords.longitude);
+				}
+			}
+
+			// If they were forced here by routing guard, redirect back
+			if (location.state?.requireLocation && locationCoords) {
+				setTimeout(() => {
+					navigate(location.state.from || "/products");
+				}, 1000);
 			}
 		} catch (err) {
 			const detail = err?.response?.data?.detail;
@@ -549,6 +573,16 @@ const CustomerProfile = () => {
 	return (
 		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
 			<div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+				{location.state?.requireLocation && (
+					<div className="bg-emerald-600 rounded-[24px] p-6 text-white shadow-xl flex flex-col md:flex-row items-center gap-6 justify-between border-4 border-emerald-500/30">
+						<div>
+							<h3 className="text-2xl font-black tracking-tight mb-2">Welcome to GrowEasy!</h3>
+							<p className="text-emerald-50 font-medium">Please set your location below to dive right into fresh produce precisely near you.</p>
+						</div>
+						<div className="text-5xl opacity-80 mix-blend-luminosity">🗺️</div>
+					</div>
+				)}
+
 				<div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-gray-200 dark:border-gray-800/80 pb-8">
 					<div className="max-w-2xl">
 						<h1 className="text-4xl sm:text-5xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-2">My Profile</h1>

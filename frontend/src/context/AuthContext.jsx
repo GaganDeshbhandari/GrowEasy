@@ -30,6 +30,18 @@ export const AuthProvider = ({ children }) => {
 
         // Validate cookie session and rotate tokens before restoring UI user state.
         await api.post("/auth/refreshToken/");
+        
+        // Hydrate location for customers strictly on initialization
+        if (parsedUser.role === "customer") {
+          try {
+            const profileRes = await api.get("/auth/customer/profile/");
+            parsedUser.latitude = profileRes.data.latitude;
+            parsedUser.longitude = profileRes.data.longitude;
+          } catch (e) {
+            console.warn("Failed to securely hydrate location on boot", e);
+          }
+        }
+
         setUser(parsedUser);
       } catch (error) {
         localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -62,6 +74,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Helper for dynamically appending location to context post-save
+  const updateLocationInContext = (lat, lng) => {
+    if (!user) return;
+    const updatedUser = { ...user, latitude: lat, longitude: lng };
+    setUser(updatedUser);
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
+  };
+
   // Value object shared with every component that uses this context
   const value = {
     user,
@@ -69,6 +89,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     setLoading,
+    updateLocationInContext,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

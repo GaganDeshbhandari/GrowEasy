@@ -13,10 +13,13 @@ const ProductList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [locationMeta, setLocationMeta] = useState(null);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [manualCoords, setManualCoords] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -32,11 +35,13 @@ const ProductList = () => {
     setError("");
     try {
       const categoryQuery = selectedCategory !== "all" ? `&category=${selectedCategory}` : "";
-      const res = await api.get(`/products/?page=${page}${categoryQuery}`);
+      const coordsQuery = manualCoords ? `&lat=${manualCoords.lat}&lng=${manualCoords.lng}` : "";
+      const res = await api.get(`/products/?page=${page}${categoryQuery}${coordsQuery}`);
       const data = res.data;
       setProducts(data.results);
       setCount(data.count);
       setTotalPages(Math.ceil(data.count / 12));
+      setLocationMeta(data.location_filter);
     } catch {
       setError("Failed to load products. Please try again.");
     } finally {
@@ -50,7 +55,7 @@ const ProductList = () => {
 
   useEffect(() => {
     fetchProducts(currentPage);
-  }, [currentPage, selectedCategory]);
+  }, [currentPage, selectedCategory, manualCoords]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -106,6 +111,26 @@ const ProductList = () => {
     const right = Math.min(totalPages, currentPage + delta);
     for (let i = left; i <= right; i++) pages.push(i);
     return pages;
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      setIsLocating(true);
+      if (!navigator.geolocation) throw new Error("Not supported");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setManualCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setCurrentPage(1);
+          setIsLocating(false);
+        },
+        () => {
+          alert("Could not access location. Using your saved profile location.");
+          setIsLocating(false);
+        }
+      );
+    } catch (e) {
+      setIsLocating(false);
+    }
   };
 
   // ── Loading skeleton ──
@@ -240,8 +265,54 @@ const ProductList = () => {
         </div>
       </div>
 
+      {/* ── Location Banner ── */}
+      {locationMeta && (
+        <div className="max-w-7xl mx-auto px-4 mt-6">
+          {!locationMeta.applied && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 shadow-sm">
+              <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                🗺️ Set your location to find nearby harvest and save on delivery!
+              </p>
+              <button onClick={() => navigate("/profile/customer")} className="shrink-0 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl transition-all">
+                Update Profile
+              </button>
+            </div>
+          )}
+          {locationMeta.applied && locationMeta.expanded === false && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 shadow-sm">
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-400">
+                📍 Showing fresh produce within {locationMeta.radius_km}km of your address.
+              </p>
+              <button disabled={isLocating} onClick={handleUseCurrentLocation} className="shrink-0 text-xs font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300 bg-white dark:bg-[#1A241A] border border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-300 px-4 py-2 rounded-xl transition-all disabled:opacity-50">
+                {isLocating ? "Locating..." : "Use Current Location"}
+              </button>
+            </div>
+          )}
+          {locationMeta.applied && locationMeta.expanded === true && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 shadow-sm">
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-400">
+                🌍 We widened our search to {locationMeta.radius_km}km to find more fresh produce for you!
+              </p>
+              <button disabled={isLocating} onClick={handleUseCurrentLocation} className="shrink-0 text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-300 bg-white dark:bg-[#1A241A] border border-amber-200 dark:border-amber-800/60 hover:border-amber-300 px-4 py-2 rounded-xl transition-all disabled:opacity-50">
+                {isLocating ? "Locating..." : "Use Current Location"}
+              </button>
+            </div>
+          )}
+          {locationMeta.applied && locationMeta.expanded === 'all' && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/40 shadow-sm">
+              <p className="text-sm font-bold text-rose-800 dark:text-rose-400">
+                🔭 No farmers found within 100km. Showing you everything available!
+              </p>
+              <button disabled={isLocating} onClick={handleUseCurrentLocation} className="shrink-0 text-xs font-black uppercase tracking-widest text-rose-700 dark:text-rose-300 bg-white dark:bg-[#1A241A] border border-rose-200 dark:border-rose-800/60 hover:border-rose-300 px-4 py-2 rounded-xl transition-all disabled:opacity-50">
+                {isLocating ? "Locating..." : "Use Current Location"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Product Grid ── */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {filtered.length === 0 ? (
           <div className="text-center py-24 bg-white/50 dark:bg-gray-900/30 rounded-[3rem] border border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm shadow-sm">
             <p className="text-7xl mb-6 opacity-60 mix-blend-luminosity">🌾</p>

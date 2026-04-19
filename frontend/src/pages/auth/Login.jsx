@@ -35,9 +35,10 @@ const Login = () => {
         latitude: latitude.toFixed(6),
         longitude: longitude.toFixed(6),
       });
+      return { latitude: latitude.toFixed(6), longitude: longitude.toFixed(6) };
     } catch (locationError) {
-      // Keep login flow non-blocking for customer if browser blocks location.
       console.warn("Customer location update skipped:", locationError);
+      return null;
     }
   };
 
@@ -56,7 +57,11 @@ const Login = () => {
       const userData = response.data.user;
 
       if (userData.role === "customer") {
-        await saveCustomerLocation();
+        const loc = await saveCustomerLocation();
+        if (loc) {
+          userData.latitude = loc.latitude;
+          userData.longitude = loc.longitude;
+        }
       }
 
       login(userData);
@@ -64,7 +69,11 @@ const Login = () => {
       if (userData.role === "farmer") {
         navigate("/farmer/dashboard");
       } else {
-        navigate("/products");
+        if (!userData.latitude || !userData.longitude) {
+          navigate("/profile/customer", { state: { requireLocation: true } });
+        } else {
+          navigate("/products");
+        }
       }
     } catch (err) {
       const data = err.response?.data;
