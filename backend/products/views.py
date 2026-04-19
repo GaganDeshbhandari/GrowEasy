@@ -1,17 +1,19 @@
 from rest_framework import generics
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from accounts.permissions import CustomerPermission, FarmerPermission
-from utils.location import haversine
+from accounts.permissions import FarmerPermission
+from utils.distance import get_distance_km
 from .models import Product, ProductCategory
 from .serializers import (
-    NearbyProductReadSerializer,
     ProductCategorySerializer,
     ProductReadSerializer,
     ProductWriteSerializer,
 )
+
+DEFAULT_RADIUS_KM = 30
+EXPANDED_RADIUS_KM = 100
 
 
 # 1. ProductListCreateView - List all products and create new product
@@ -19,7 +21,9 @@ class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.filter(is_active=True).select_related('farmer').prefetch_related('images', 'categories')
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True).select_related('farmer').prefetch_related('images', 'categories')
+        queryset = Product.objects.filter(is_active=True).select_related(
+            'farmer', 'farmer__user'
+        ).prefetch_related('images', 'categories')
 
         category_id = self.request.query_params.get('category')
         if category_id:
@@ -36,6 +40,124 @@ class ProductListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'GET':
             return ProductReadSerializer
         return ProductWriteSerializer
+
+    # ── Location helpers ──
+
+    def _get_customer_coordinates(self):
+        """
+        Priority order:
+        1. Query params ?lat=...&lng=... (manual override / GPS)
+        2. CustomerProfile lat/lng (if logged in)
+        3. None (fallback → no filter)
+        """
+        request = self.request
+
+        # 1. Query param override
+        lat_param = request.query_params.get('lat')
+        lng_param = request.query_params.get('lng')
+        if lat_param and lng_param:
+            try:
+                return float(lat_param), float(lng_param)
+            except (ValueError, TypeError):
+                pass
+
+        # 2. Profile coordinates (only for authenticated customers)
+        if request.user and request.user.is_authenticated:
+            profile = getattr(request.user, 'customerprofile', None)
+            if profile and profile.latitude and profile.longitude:
+                return float(profile.latitude), float(profile.longitude)
+
+        # 3. No coordinates available
+        return None, None
+
+    def _get_radius(self):
+        """Accept optional ?radius=X query param, default to 30."""
+        raw = self.request.query_params.get('radius')
+        if raw:
+            try:
+                val = float(raw)
+                if 1 <= val <= 500:  # sane bounds
+                    return val
+            except (ValueError, TypeError):
+                pass
+        return DEFAULT_RADIUS_KM
+
+    def _filter_by_distance(self, products, lat, lng, radius_km):
+        """
+        Filter products whose farmer is within radius_km of (lat, lng).
+        Returns the filtered list.
+
+        # TODO: Replace with PostGIS spatial query when scaling beyond 10k products
+        """
+        nearby = []
+        for product in products:
+            farmer = product.farmer
+            if farmer.latitude is None or farmer.longitude is None:
+                continue
+            dist = get_distance_km(lat, lng, farmer.latitude, farmer.longitude)
+            if dist is not None and dist <= radius_km:
+                nearby.append(product)
+        return nearby
+
+    # ── Override list() to inject location_filter metadata ──
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        customer_lat, customer_lng = self._get_customer_coordinates()
+
+        # No customer location → return all products unfiltered
+        if customer_lat is None or customer_lng is None:
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+                response.data['location_filter'] = {'applied': False}
+                return response
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'results': serializer.data,
+                'location_filter': {'applied': False},
+            })
+
+        # Customer has location → apply distance filter
+        radius_km = self._get_radius()
+        all_products = list(queryset)
+        filtered = self._filter_by_distance(all_products, customer_lat, customer_lng, radius_km)
+        expanded = False
+
+        # Auto-expand to 100km if empty
+        if not filtered and radius_km < EXPANDED_RADIUS_KM:
+            filtered = self._filter_by_distance(all_products, customer_lat, customer_lng, EXPANDED_RADIUS_KM)
+            if filtered:
+                radius_km = EXPANDED_RADIUS_KM
+                expanded = True
+
+        # Still empty → return all products
+        if not filtered:
+            filtered = all_products
+            expanded = 'all'
+
+        location_filter = {
+            'applied': True,
+            'radius_km': radius_km,
+            'expanded': expanded,
+            'customer_lat': customer_lat,
+            'customer_lng': customer_lng,
+        }
+
+        # Manual pagination over the filtered list
+        page = self.paginate_queryset(filtered)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            response.data['location_filter'] = location_filter
+            return response
+
+        serializer = self.get_serializer(filtered, many=True)
+        return Response({
+            'results': serializer.data,
+            'location_filter': location_filter,
+        })
 
 
 # 2. ProductDetailView - Retrieve, update, delete a single product
@@ -110,46 +232,5 @@ class ProductCategoryListView(generics.ListAPIView):
     queryset = ProductCategory.objects.all().order_by('name')
 
 
-class NearbyProductListView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated, CustomerPermission]
-    serializer_class = NearbyProductReadSerializer
-    max_distance_km = 30
 
-    def _get_customer_coordinates(self):
-        customer_profile = getattr(self.request.user, "customerprofile", None)
 
-        if customer_profile is None:
-            raise ValidationError({"detail": "Customer profile not found for the authenticated user."})
-
-        if customer_profile.latitude is None or customer_profile.longitude is None:
-            raise ValidationError({"detail": "Customer location is required to fetch nearby products."})
-
-        return customer_profile.latitude, customer_profile.longitude
-
-    def get_queryset(self):
-        customer_latitude, customer_longitude = self._get_customer_coordinates()
-        nearby_products = []
-
-        products = (
-            Product.objects.filter(
-                is_active=True,
-                farmer__latitude__isnull=False,
-                farmer__longitude__isnull=False,
-            )
-            .select_related("farmer", "farmer__user")
-            .prefetch_related("images", "categories")
-        )
-
-        for product in products:
-            distance_km = haversine(
-                customer_latitude,
-                customer_longitude,
-                product.farmer.latitude,
-                product.farmer.longitude,
-            )
-            if distance_km <= self.max_distance_km:
-                product.distance_km = round(distance_km, 2)
-                nearby_products.append(product)
-
-        nearby_products.sort(key=lambda product: (product.distance_km, product.id))
-        return nearby_products
