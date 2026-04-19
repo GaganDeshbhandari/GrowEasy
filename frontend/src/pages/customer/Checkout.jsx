@@ -41,6 +41,7 @@ const Checkout = () => {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('upi');
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [paymentError, setPaymentError] = useState(null);
+    const [outOfStockError, setOutOfStockError] = useState(null);
     const [orderSuccess, setOrderSuccess] = useState(null);
 
     // Specific Payment Method Forms
@@ -406,7 +407,12 @@ const Checkout = () => {
                 error?.response?.data?.detail ||
                 error?.response?.data?.error ||
                 "Failed to initiate payment. Please try again.";
-            setPaymentError(message);
+                
+            if (error?.response?.status === 400 && (typeof message === 'string' && message.toLowerCase().includes('stock'))) {
+                setOutOfStockError(message);
+            } else {
+                setPaymentError(message);
+            }
             setPaymentLoading(false);
         }
     };
@@ -472,6 +478,41 @@ const Checkout = () => {
     return (
         <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {outOfStockError && (
+                    <div className="mb-8 relative bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-[24px] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4">
+                        <div className="absolute top-0 left-0 w-2.5 h-full bg-red-500"></div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-800/50 flex items-center justify-center shrink-0">
+                                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-red-700 dark:text-red-400 mb-1 tracking-tight">Insufficient Stock</h3>
+                                <p className="text-sm font-bold text-red-600/80 dark:text-red-400/80">{outOfStockError}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setOutOfStockError(null)}
+                                className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800/40 rounded-xl transition-colors text-center"
+                            >
+                                Dismiss
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate("/cart")}
+                                className="flex-1 sm:flex-none px-5 py-2.5 bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white text-sm font-black rounded-xl transition-all shadow-sm active:scale-95 text-center flex items-center justify-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Back to Cart
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                     <div>
@@ -509,24 +550,32 @@ const Checkout = () => {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {cartSummary.items.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between gap-4 p-4 rounded-[16px] border border-gray-100 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#1A241A]/30">
+                                    {cartSummary.items.map((item) => {
+                                        const isOutOfStock = outOfStockError && item.product?.name && outOfStockError.toLowerCase().includes(item.product.name.toLowerCase());
+                                        return (
+                                        <div key={item.id} className={`flex items-center justify-between gap-4 p-4 rounded-[16px] border transition-colors ${
+                                            isOutOfStock
+                                                ? "border-red-500 bg-red-50 dark:bg-red-900/20 shadow-[0_0_15px_-3px_rgba(239,68,68,0.3)] animate-shake"
+                                                : "border-gray-100 dark:border-gray-800/60 bg-gray-50/50 dark:bg-[#1A241A]/30"
+                                        }`}>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-black text-sm text-[#111812] dark:text-[#E8F3EB] truncate">{item.product?.name}</p>
-                                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider">
+                                                <p className={`font-black text-sm truncate ${isOutOfStock ? 'text-red-700 dark:text-red-400' : 'text-[#111812] dark:text-[#E8F3EB]'}`}>
+                                                    {item.product?.name}
+                                                </p>
+                                                <p className={`text-xs font-semibold mt-1 uppercase tracking-wider ${isOutOfStock ? 'text-red-600/70 dark:text-red-400/70' : 'text-gray-500 dark:text-gray-400'}`}>
                                                     By {item.product?.farmer_name || "GrowEasy Farmer"} • QTY: {parseFloat(item.quantity)}kg
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-black text-sm text-emerald-700 dark:text-emerald-400 shrink-0">
+                                                <p className={`font-black text-sm shrink-0 ${isOutOfStock ? 'text-red-700 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
                                                     ₹{parseFloat(item.total || 0).toFixed(2)}
                                                 </p>
-                                                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mt-0.5">
+                                                <p className={`text-xs font-bold mt-0.5 ${isOutOfStock ? 'text-red-500/70 dark:text-red-400/70' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     ₹{parseFloat(item.product?.price || 0).toFixed(2)}/kg
                                                 </p>
                                             </div>
                                         </div>
-                                    ))}
+                                    )})}
 
                                     <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-200 dark:border-gray-800 flex flex-col gap-2">
                                         <div className="flex justify-between text-sm font-bold text-gray-500 dark:text-gray-400">

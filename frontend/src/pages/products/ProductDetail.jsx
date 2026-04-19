@@ -15,10 +15,12 @@ const ProductDetail = () => {
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [quantityError, setQuantityError] = useState("");
 
   const [cartLoading, setCartLoading] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
   const [cartError, setCartError] = useState("");
+  const [isShaking, setIsShaking] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -35,6 +37,16 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleAddToCart = async () => {
+    if (quantity > maxQty) {
+      setQuantityError(`Only ${maxQty}kg available`);
+      return;
+    }
+
+    if (quantity < 1) {
+      setQuantityError("Quantity must be at least 1");
+      return;
+    }
+
     setCartLoading(true);
     setCartError("");
     setCartSuccess(false);
@@ -44,13 +56,38 @@ const ProductDetail = () => {
         quantity: quantity,
       });
       setCartSuccess(true);
+      setQuantityError("");
       window.dispatchEvent(new Event("cartUpdated"));
       setTimeout(() => setCartSuccess(false), 3000);
     } catch (err) {
-      const msg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0];
-      setCartError(msg || "Could not add to cart. Please try again.");
+      const backendError = err.response?.data?.error;
+      const msg = (Array.isArray(backendError) ? backendError[0] : backendError) || err.response?.data?.detail || err.response?.data?.non_field_errors?.[0];
+      
+      if (err.response?.status === 400) {
+        setQuantityError(msg || "Insufficient stock. Please try again.");
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+      } else {
+        setCartError(msg || "Could not add to cart. Please try again.");
+      }
     } finally {
       setCartLoading(false);
+    }
+  };
+
+  const handleQuantityInputChange = (event) => {
+    const inputValue = parseFloat(event.target.value);
+    if (Number.isNaN(inputValue)) {
+      setQuantity(1);
+      setQuantityError("");
+      return;
+    }
+
+    setQuantity(inputValue);
+    if (inputValue > maxQty) {
+      setQuantityError(`Only ${maxQty}kg available`);
+    } else {
+      setQuantityError("");
     }
   };
 
@@ -115,7 +152,7 @@ const ProductDetail = () => {
     );
   }
 
-  const maxQty = parseFloat(product.stock);
+  const maxQty = parseFloat(product.available_stock ?? product.stock ?? 0);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-16">
@@ -183,7 +220,7 @@ const ProductDetail = () => {
 
             {/* ── RIGHT: Product Info ── */}
             <div className="w-full lg:w-[45%] space-y-8">
-              
+
               <div className="space-y-4">
                 {product.categories.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
@@ -249,13 +286,29 @@ const ProductDetail = () => {
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row gap-4 lg:gap-5">
                     {/* Quantity selector */}
-                    <div className="flex items-center bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800/60 rounded-[20px] shadow-sm p-1.5 shrink-0">
+                    <div className={`flex items-center bg-white dark:bg-[#111812] border ${quantityError ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-100 dark:border-gray-800/60'} rounded-[20px] shadow-sm p-1.5 shrink-0 ${isShaking ? 'animate-shake' : ''} transition-all`}>
                       <button
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        onClick={() => {
+                          setQuantity((q) => {
+                            const next = Math.max(1, q - 1);
+                            if (next <= maxQty) {
+                              setQuantityError("");
+                            }
+                            return next;
+                          });
+                        }}
                         className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium"
                       >−</button>
-                      <div className="w-16 flex flex-col items-center justify-center">
-                        <span className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] leading-none">{quantity}</span>
+                      <div className="w-20 flex flex-col items-center justify-center">
+                        <input
+                          type="number"
+                          min={1}
+                          max={maxQty}
+                          step="1"
+                          value={quantity}
+                          onChange={handleQuantityInputChange}
+                          className={`w-full text-center bg-transparent text-lg font-black leading-none focus:outline-none ${quantityError ? 'text-red-500 font-bold' : 'text-[#111812] dark:text-[#E8F3EB]'}`}
+                        />
                         <span className="text-[10px] uppercase font-black text-gray-400 dark:text-gray-500 mt-1">{product.unit}</span>
                       </div>
                       <button
@@ -267,7 +320,7 @@ const ProductDetail = () => {
                     {/* Add to cart button */}
                     <button
                       onClick={handleAddToCart}
-                      disabled={cartLoading}
+                      disabled={cartLoading || quantity > maxQty || quantity < 1}
                       className="flex-1 bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 active:scale-[0.98] text-white font-black text-lg py-4 px-8 rounded-[20px] shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                     >
                       {cartLoading ? (
@@ -288,6 +341,12 @@ const ProductDetail = () => {
                       )}
                     </button>
                   </div>
+
+                  {quantityError && (
+                    <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                      {quantityError}
+                    </p>
+                  )}
 
                   {cartSuccess && (
                     <div className="flex justify-center items-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 rounded-[16px] px-5 py-3 animate-fade-in">

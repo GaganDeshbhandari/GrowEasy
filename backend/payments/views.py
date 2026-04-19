@@ -40,6 +40,19 @@ class CreateRazorpayOrderView(generics.GenericAPIView):
         if not cart.items.exists():
             return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
 
+        unavailable_items = [
+            item.product.name for item in cart.items.all()
+            if not item.product or not item.product.is_active
+        ]
+        if unavailable_items:
+            return Response(
+                {
+                    "error": "Some items in your cart are no longer available",
+                    "unavailable_items": unavailable_items,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # Validate address belongs to this customer
         address = Address.objects.filter(id=address_id, customer=customer).first()
         if not address:

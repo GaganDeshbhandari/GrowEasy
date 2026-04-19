@@ -104,6 +104,10 @@ const Cart = () => {
 
   // ── Empty cart ──
   const items = cart?.items || [];
+  const unavailableItems = items.filter((item) => item.is_available === false);
+  const hasUnavailableItems = unavailableItems.length > 0;
+  const hasStockIssues = items.some((item) => parseFloat(item.quantity) > parseFloat(item.available_stock ?? item.product?.stock ?? 0));
+  const availableItems = items.filter((item) => item.is_available !== false);
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] flex flex-col items-center justify-center px-4 md:px-8 text-center transition-colors duration-500 font-sans">
@@ -130,7 +134,7 @@ const Cart = () => {
     );
   }
 
-  const cartTotal = parseFloat(cart?.total || 0);
+  const cartTotal = availableItems.reduce((sum, item) => sum + parseFloat(item.total || 0), 0);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
@@ -162,6 +166,18 @@ const Cart = () => {
           </div>
         )}
 
+            {hasUnavailableItems && (
+          <div className="mb-6 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm font-bold rounded-lg px-4 py-3">
+            Some items in your cart are no longer available. Please remove them before checkout.
+          </div>
+        )}
+
+        {hasStockIssues && (
+          <div className="mb-6 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300 text-sm font-bold rounded-lg px-4 py-3">
+            Some items exceed the currently available stock. Please update their quantities.
+          </div>
+        )}
+
         {/* ── Cart items + Summary layout ── */}
         <div className="flex flex-col lg:flex-row gap-8">
 
@@ -170,16 +186,23 @@ const Cart = () => {
             {items.map((item) => {
               const imgUrl = getPrimaryImage(item.product?.images);
               const isUpdating = updatingId === item.id;
+              const isUnavailable = item.is_available === false;
+              const itemAvailableStock = parseFloat(item.available_stock ?? item.product?.stock ?? 0);
+              const exceedsStock = parseFloat(item.quantity) > itemAvailableStock;
 
               return (
                 <div
                   key={item.id}
                   className={`group bg-white dark:bg-[#111812] rounded-[32px] border border-gray-100 dark:border-gray-800/60 p-6 sm:p-8 flex flex-col sm:flex-row gap-6 sm:gap-8 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all duration-300 relative overflow-hidden ${
-                    isUpdating ? "opacity-50 pointer-events-none scale-[0.99]" : "hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:border-emerald-900/40"
+                    isUpdating
+                      ? "opacity-50 pointer-events-none scale-[0.99]"
+                      : isUnavailable
+                        ? "opacity-60 bg-gray-50 dark:bg-[#0f140f]"
+                        : "hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:border-emerald-900/40"
                   }`}
                 >
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gray-100 dark:bg-gray-800 group-hover:bg-emerald-500 transition-colors duration-500"></div>
-                  
+
                   {/* Product image */}
                   <Link to={`/products/${item.product?.id}`} className="shrink-0 w-full sm:w-36 h-48 sm:h-36 rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#1A241A] block relative border border-gray-100 dark:border-gray-800/50">
                     {imgUrl ? (
@@ -207,11 +230,16 @@ const Cart = () => {
                             {item.product?.name}
                           </h3>
                         </Link>
+                        {isUnavailable && (
+                          <div className="mt-2 inline-flex items-center rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs font-black px-3 py-1">
+                            This product is no longer available
+                          </div>
+                        )}
                         <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-widest">
                           ₹{parseFloat(item.product?.price).toFixed(2)} / <span className="text-emerald-600 dark:text-emerald-500">{item.product?.unit}</span>
                         </p>
                       </div>
-                      
+
                       {/* Remove button */}
                       <button
                         onClick={() => removeItem(item.id)}
@@ -230,37 +258,57 @@ const Cart = () => {
                       {/* Qty controls */}
                       <div>
                         <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 ml-1">Quantity</p>
-                        <div className="inline-flex items-center bg-gray-50 dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 rounded-2xl overflow-hidden p-1">
+                        <div className={`inline-flex items-center bg-gray-50 dark:bg-[#1A241A] border ${exceedsStock ? 'border-orange-500 dark:border-orange-400 ring-2 ring-orange-500/20' : 'border-gray-200 dark:border-gray-800/60'} rounded-2xl overflow-hidden p-1 transition-all`}>
                           <button
                             onClick={() => updateQuantity(item.id, parseFloat(item.quantity) - 1)}
-                            disabled={parseFloat(item.quantity) <= 1}
+                            disabled={isUnavailable || parseFloat(item.quantity) <= 1}
                             className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#111812] text-gray-900 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 border border-gray-100 dark:border-gray-800 shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed font-medium"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
                           </button>
-                          
+
                           <div className="w-16 flex flex-col items-center justify-center">
                             <span className="text-base font-black text-[#111812] dark:text-[#E8F3EB] leading-none mb-0.5">{parseFloat(item.quantity)}</span>
                           </div>
-                          
+
                           <button
                             onClick={() => updateQuantity(item.id, parseFloat(item.quantity) + 1)}
-                            disabled={parseFloat(item.quantity) >= parseFloat(item.product?.stock)}
+                            disabled={isUnavailable || parseFloat(item.quantity) >= itemAvailableStock}
                             className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#111812] text-gray-900 dark:text-gray-100 hover:text-emerald-600 dark:hover:text-emerald-400 border border-gray-100 dark:border-gray-800 shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed font-medium"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                           </button>
                         </div>
+                        {exceedsStock && (
+                          <div className="mt-2 text-xs font-bold text-orange-600 dark:text-orange-400">
+                            Only {itemAvailableStock}kg available
+                            <button
+                              onClick={() => updateQuantity(item.id, itemAvailableStock)}
+                              className="ml-2 underline text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
+                            >
+                              Update
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Item total */}
                       <div className="text-right">
                         <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Subtotal</p>
                         <span className="text-2xl font-black text-emerald-600 dark:text-emerald-500">
-                          ₹{parseFloat(item.total).toFixed(2)}
+                          {isUnavailable ? "—" : `₹${parseFloat(item.total).toFixed(2)}`}
                         </span>
                       </div>
                     </div>
+
+                    {isUnavailable && (
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="mt-5 w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-black px-5 py-3 rounded-xl transition-all active:scale-95"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -275,7 +323,7 @@ const Cart = () => {
 
               {/* Items breakdown */}
               <div className="space-y-4 mb-8">
-                {items.map((item) => (
+                {availableItems.map((item) => (
                   <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between text-base gap-2">
                     <span className="text-gray-600 dark:text-gray-400 font-medium truncate flex-1 min-w-0 pr-2">
                       <span className="text-[#111812] dark:text-[#E8F3EB] font-bold mr-1.5">{parseFloat(item.quantity)}×</span>
@@ -300,15 +348,18 @@ const Cart = () => {
               </div>
 
               {/* Checkout CTA */}
-              <button
-                onClick={() => navigate("/checkout")}
-                className="w-full bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-base"
-              >
-                Proceed to Checkout
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
+              <div title={(hasUnavailableItems || hasStockIssues) ? "Update quantities to match available stock" : ""}>
+                <button
+                  onClick={() => navigate("/checkout")}
+                  disabled={hasUnavailableItems || hasStockIssues}
+                  className="w-full bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#111812] disabled:dark:hover:bg-emerald-600"
+                >
+                  Proceed to Checkout
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </button>
+              </div>
 
               {/* Continue Shopping */}
               <div className="mt-4 text-center">

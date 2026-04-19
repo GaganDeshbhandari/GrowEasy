@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.db.models import Sum
 from .models import Product, ProductCategory, ProductImage
 from accounts.models import FarmerProfile
+from orders.models import CartItem
 
 # 1. ProductCategorySerializer
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -22,6 +24,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
     categories = ProductCategorySerializer(many=True, read_only=True)
     farmer = serializers.StringRelatedField(read_only=True)
     farmer_id = serializers.IntegerField(source='farmer.id', read_only=True)
+    available_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -33,6 +36,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
             'stock',
             'unit',
             'price',
+            'available_stock',
             'categories',
             'images',
             'is_active',
@@ -40,6 +44,23 @@ class ProductReadSerializer(serializers.ModelSerializer):
             'updated_at'
         ]
         read_only_fields = ['farmer', 'farmer_id', 'created_at', 'updated_at', 'images', 'categories']
+
+    def get_available_stock(self, obj):
+        request = self.context.get('request')
+        current_cart = None
+
+        if request and getattr(request, 'user', None) and request.user.is_authenticated:
+            customer_profile = getattr(request.user, 'customerprofile', None)
+            if customer_profile:
+                current_cart = getattr(customer_profile, 'cart', None)
+
+        reserved_queryset = CartItem.objects.filter(product=obj)
+        if current_cart:
+            reserved_queryset = reserved_queryset.exclude(cart=current_cart)
+
+        reserved_by_others = reserved_queryset.aggregate(total_reserved=Sum('quantity')).get('total_reserved') or 0
+        available_stock = obj.stock - reserved_by_others
+        return available_stock if available_stock > 0 else 0
 
 
 

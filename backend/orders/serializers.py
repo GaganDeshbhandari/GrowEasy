@@ -1,7 +1,23 @@
 from rest_framework import serializers
+from django.db.models import Sum
 from products.serializers import ProductReadSerializer
 from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem
+
+
+def _to_non_negative(value):
+    return value if value > 0 else 0
+
+
+def _get_available_stock_for_cart(product, cart):
+    reserved_by_others = (
+        CartItem.objects.filter(product=product)
+        .exclude(cart=cart)
+        .aggregate(total_reserved=Sum('quantity'))
+        .get('total_reserved')
+        or 0
+    )
+    return _to_non_negative(product.stock - reserved_by_others)
 
 
 # 1. CartItemSerializer
@@ -9,19 +25,35 @@ from .models import Cart, CartItem, Order, OrderItem
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductReadSerializer(read_only=True)
     total = serializers.SerializerMethodField()
+    available_stock = serializers.SerializerMethodField()
+    is_available = serializers.SerializerMethodField()
+    unavailable_reason = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'quantity', 'total']
+        fields = ['id', 'product', 'quantity', 'total', 'available_stock', 'is_available', 'unavailable_reason']
 
     def get_total(self, obj):
         return obj.total
+
+    def get_available_stock(self, obj):
+        if not obj.product:
+            return 0
+        return _get_available_stock_for_cart(obj.product, obj.cart)
+
+    def get_is_available(self, obj):
+        return bool(obj.product and obj.product.is_active)
+
+    def get_unavailable_reason(self, obj):
+        if self.get_is_available(obj):
+            return None
+        return "Product is no longer available"
 
 
 # CartItemWriteSerializer - for POST/PATCH
 # This Serializer is for updating quantity of the items that are already in the cart
 class CartItemWriteSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField(write_only=True)
+    product_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = CartItem
@@ -31,6 +63,40 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
         if not Product.objects.filter(id=value, is_active=True).exists():
             raise serializers.ValidationError("Product not found or inactive")
         return value
+
+    def validate(self, attrs):
+        cart = self.context.get('cart')
+        if cart is None and self.instance is not None:
+            cart = self.instance.cart
+
+        if cart is None:
+            raise serializers.ValidationError({'error': 'Cart not found'})
+
+        if self.instance is not None:
+            product = self.instance.product
+            requested_quantity = attrs.get('quantity', self.instance.quantity)
+        else:
+            product_id = attrs.get('product_id')
+            if not product_id:
+                raise serializers.ValidationError({'product_id': 'This field is required.'})
+            product = Product.objects.filter(id=product_id, is_active=True).first()
+            if not product:
+                raise serializers.ValidationError({'product_id': 'Product not found or inactive'})
+
+            existing_item = CartItem.objects.filter(cart=cart, product=product).first()
+            incoming_quantity = attrs.get('quantity', 0)
+            requested_quantity = incoming_quantity + (existing_item.quantity if existing_item else 0)
+
+        available_stock = _get_available_stock_for_cart(product, cart)
+        if requested_quantity > available_stock:
+            raise serializers.ValidationError(
+                {
+                    'error': f'Only {available_stock}kg available',
+                    'available_stock': available_stock,
+                }
+            )
+
+        return attrs
 
     def create(self, validated_data):
         product_id = validated_data.pop('product_id')
@@ -82,10 +148,10 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_total(self, obj):
         return obj.total
-        
+
     def get_farmer_id(self, obj):
         return obj.product.farmer.id if obj.product and obj.product.farmer else None
-        
+
     def get_farmer_name(self, obj):
         return obj.product.farmer.user.fullname if obj.product and obj.product.farmer and obj.product.farmer.user else "Verified Farmer"
 

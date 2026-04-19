@@ -55,10 +55,10 @@ class CartItemUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if 'quantity' in request.data:
-            instance.quantity = request.data['quantity']
-            instance.save()
-        return Response(CartItemSerializer(instance).data)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_item = serializer.save()
+        return Response(CartItemSerializer(updated_item).data)
 
 
 # 4. OrderListCreateView - GET list orders, POST checkout
