@@ -46,21 +46,8 @@ class ProductReadSerializer(serializers.ModelSerializer):
         read_only_fields = ['farmer', 'farmer_id', 'created_at', 'updated_at', 'images', 'categories']
 
     def get_available_stock(self, obj):
-        request = self.context.get('request')
-        current_cart = None
-
-        if request and getattr(request, 'user', None) and request.user.is_authenticated:
-            customer_profile = getattr(request.user, 'customerprofile', None)
-            if customer_profile:
-                current_cart = getattr(customer_profile, 'cart', None)
-
-        reserved_queryset = CartItem.objects.filter(product=obj)
-        if current_cart:
-            reserved_queryset = reserved_queryset.exclude(cart=current_cart)
-
-        reserved_by_others = reserved_queryset.aggregate(total_reserved=Sum('quantity')).get('total_reserved') or 0
-        available_stock = obj.stock - reserved_by_others
-        return available_stock if available_stock > 0 else 0
+        reserved = CartItem.objects.filter(product=obj).aggregate(total=Sum('quantity'))['total'] or 0
+        return max(obj.stock - reserved, 0)
 
 
 

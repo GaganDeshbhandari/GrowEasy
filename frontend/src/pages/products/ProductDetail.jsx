@@ -62,7 +62,7 @@ const ProductDetail = () => {
     } catch (err) {
       const backendError = err.response?.data?.error;
       const msg = (Array.isArray(backendError) ? backendError[0] : backendError) || err.response?.data?.detail || err.response?.data?.non_field_errors?.[0];
-      
+
       if (err.response?.status === 400) {
         setQuantityError(msg || "Insufficient stock. Please try again.");
         setIsShaking(true);
@@ -152,7 +152,7 @@ const ProductDetail = () => {
     );
   }
 
-  const maxQty = parseFloat(product.available_stock ?? product.stock ?? 0);
+  const maxQty = parseFloat(product.available_stock ?? 0);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-16">
@@ -276,18 +276,19 @@ const ProductDetail = () => {
                       : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200/50 dark:border-red-800/50"
                   }`}>
                     <span className={`w-2 h-2 rounded-full font-black ${maxQty > 0 ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
-                    {maxQty > 0 ? `${product.stock} ${product.unit} left` : "Out of stock"}
+                    {maxQty > 0 ? `${product.available_stock} ${product.unit} left` : "Out of Stock"}
                   </span>
                 </div>
               </div>
 
               {/* ── Add to Cart (customer only) ── */}
-              {user?.role === "customer" && maxQty > 0 && (
+              {user?.role === "customer" && (
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row gap-4 lg:gap-5">
                     {/* Quantity selector */}
-                    <div className={`flex items-center bg-white dark:bg-[#111812] border ${quantityError ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-100 dark:border-gray-800/60'} rounded-[20px] shadow-sm p-1.5 shrink-0 ${isShaking ? 'animate-shake' : ''} transition-all`}>
+                    <div className={`flex items-center bg-white dark:bg-[#111812] border ${quantityError ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-100 dark:border-gray-800/60'} rounded-[20px] shadow-sm p-1.5 shrink-0 ${isShaking ? 'animate-shake' : ''} transition-all ${maxQty === 0 ? 'opacity-50' : ''}`}>
                       <button
+                        disabled={maxQty === 0}
                         onClick={() => {
                           setQuantity((q) => {
                             const next = Math.max(1, q - 1);
@@ -297,7 +298,7 @@ const ProductDetail = () => {
                             return next;
                           });
                         }}
-                        className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium"
+                        className={`w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium ${maxQty === 0 ? 'cursor-not-allowed' : ''}`}
                       >−</button>
                       <div className="w-20 flex flex-col items-center justify-center">
                         <input
@@ -305,22 +306,24 @@ const ProductDetail = () => {
                           min={1}
                           max={maxQty}
                           step="1"
-                          value={quantity}
+                          disabled={maxQty === 0}
+                          value={maxQty === 0 ? 0 : quantity}
                           onChange={handleQuantityInputChange}
-                          className={`w-full text-center bg-transparent text-lg font-black leading-none focus:outline-none ${quantityError ? 'text-red-500 font-bold' : 'text-[#111812] dark:text-[#E8F3EB]'}`}
+                          className={`w-full text-center bg-transparent text-lg font-black leading-none focus:outline-none ${quantityError ? 'text-red-500 font-bold' : 'text-[#111812] dark:text-[#E8F3EB]'} ${maxQty === 0 ? 'cursor-not-allowed' : ''}`}
                         />
                         <span className="text-[10px] uppercase font-black text-gray-400 dark:text-gray-500 mt-1">{product.unit}</span>
                       </div>
                       <button
+                        disabled={maxQty === 0}
                         onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
-                        className="w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium"
+                        className={`w-12 h-12 flex items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#1A241A] hover:text-[#111812] dark:hover:text-white transition-all text-xl font-medium ${maxQty === 0 ? 'cursor-not-allowed' : ''}`}
                       >+</button>
                     </div>
 
                     {/* Add to cart button */}
                     <button
                       onClick={handleAddToCart}
-                      disabled={cartLoading || quantity > maxQty || quantity < 1}
+                      disabled={cartLoading || maxQty === 0 || quantity > maxQty || quantity < 1}
                       className="flex-1 bg-[#111812] hover:bg-[#1A241A] dark:bg-emerald-600 dark:hover:bg-emerald-500 active:scale-[0.98] text-white font-black text-lg py-4 px-8 rounded-[20px] shadow-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                     >
                       {cartLoading ? (
@@ -331,6 +334,8 @@ const ProductDetail = () => {
                           </svg>
                           Adding...
                         </>
+                      ) : maxQty === 0 ? (
+                        <>Out of Stock</>
                       ) : (
                           <>
                             <svg className="w-5 h-5 group-hover:-translate-y-0.5 group-hover:rotate-[-5deg] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -341,6 +346,12 @@ const ProductDetail = () => {
                       )}
                     </button>
                   </div>
+
+                  {maxQty === 0 && (
+                    <p className="text-sm font-bold text-red-600 dark:text-red-400 mt-2">
+                      This product is currently out of stock
+                    </p>
+                  )}
 
                   {quantityError && (
                     <p className="text-sm font-bold text-red-600 dark:text-red-400">

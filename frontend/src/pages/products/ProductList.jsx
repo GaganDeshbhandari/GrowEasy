@@ -390,11 +390,11 @@ const ProductList = () => {
                     </div>
 
                     <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-[0.4rem] border ${
-                      parseFloat(product.stock) > 0
+                      parseFloat(product.available_stock) > 0
                         ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/50"
                         : "bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-800/50"
                     }`}>
-                      {getStockText(product.stock, product.unit)}
+                      {getStockText(product.available_stock, product.unit)}
                     </span>
                   </div>
                 </div>
