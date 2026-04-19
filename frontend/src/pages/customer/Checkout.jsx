@@ -356,7 +356,8 @@ const Checkout = () => {
                             razorpay_payment_id: razorpayResponse.razorpay_payment_id,
                             razorpay_order_id: razorpayResponse.razorpay_order_id,
                             razorpay_signature: razorpayResponse.razorpay_signature,
-                            order_id: response.data.order_id
+                            cart_id: response.data.cart_id,
+                            address_id: response.data.address_id
                         }, { withCredentials: true });
 
                         if (verifyResponse.data.success) {
@@ -369,7 +370,11 @@ const Checkout = () => {
                             setPaymentLoading(false);
                         }
                     } catch (err) {
-                        setPaymentError("Payment verification failed. Please contact support.");
+                        const verifyErrorMessage =
+                            err?.response?.data?.detail ||
+                            err?.response?.data?.error ||
+                            "Payment verification failed. Please contact support.";
+                        setPaymentError(verifyErrorMessage);
                         setPaymentLoading(false);
                     }
                 },

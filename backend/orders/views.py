@@ -66,7 +66,10 @@ class OrderListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, CustomerPermission]
 
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user.customerprofile).prefetch_related('order_items')
+        return Order.objects.filter(
+            customer=self.request.user.customerprofile,
+            payment_status=Order.PaymentStatus.PAID
+        ).prefetch_related('order_items')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -119,7 +122,10 @@ class OrderDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated, CustomerPermission]
 
     def get_queryset(self):
-        return Order.objects.filter(customer=self.request.user.customerprofile).prefetch_related('order_items')
+        return Order.objects.filter(
+            customer=self.request.user.customerprofile,
+            payment_status=Order.PaymentStatus.PAID
+        ).prefetch_related('order_items')
 
 
 # 6. CancelOrderView - PATCH cancel order if status is pending
@@ -159,4 +165,7 @@ class FarmerOrderListView(generics.ListAPIView):
 
     def get_queryset(self):
         farmer_profile = self.request.user.farmerprofile
-        return OrderItem.objects.filter(product__farmer=farmer_profile)
+        return OrderItem.objects.filter(
+            product__farmer=farmer_profile,
+            order__payment_status=Order.PaymentStatus.PAID
+        )
