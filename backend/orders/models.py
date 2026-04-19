@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
 from accounts.models import CustomerProfile
 from products.models import Product
 
@@ -15,6 +17,7 @@ class CartItem(models.Model):
     cart     = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product  = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_items")
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    reserved_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("cart", "product")
@@ -25,6 +28,10 @@ class CartItem(models.Model):
     @property
     def total(self):
         return self.product.price * self.quantity
+
+    def save(self, *args, **kwargs):
+        self.reserved_until = timezone.now() + timedelta(minutes=15)
+        super().save(*args, **kwargs)
 
 class Order(models.Model):
     class Status(models.TextChoices):

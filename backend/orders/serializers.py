@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
+from django.utils import timezone
 from products.serializers import ProductReadSerializer
 from products.models import Product
 from .models import Cart, CartItem, Order, OrderItem
@@ -10,8 +11,9 @@ def _to_non_negative(value):
 
 
 def _get_available_stock_for_cart(product, cart):
+    now = timezone.now()
     reserved_by_others = (
-        CartItem.objects.filter(product=product)
+        CartItem.objects.filter(product=product, reserved_until__gt=now)
         .exclude(cart=cart)
         .aggregate(total_reserved=Sum('quantity'))
         .get('total_reserved')
@@ -28,10 +30,12 @@ class CartItemSerializer(serializers.ModelSerializer):
     available_stock = serializers.SerializerMethodField()
     is_available = serializers.SerializerMethodField()
     unavailable_reason = serializers.SerializerMethodField()
+    reserved_until = serializers.DateTimeField(read_only=True)
+    minutes_remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'quantity', 'total', 'available_stock', 'is_available', 'unavailable_reason']
+        fields = ['id', 'product', 'quantity', 'total', 'available_stock', 'is_available', 'unavailable_reason', 'reserved_until', 'minutes_remaining']
 
     def get_total(self, obj):
         return obj.total
@@ -48,6 +52,14 @@ class CartItemSerializer(serializers.ModelSerializer):
         if self.get_is_available(obj):
             return None
         return "Product is no longer available"
+
+    def get_minutes_remaining(self, obj):
+        if not obj.reserved_until:
+            return 0
+        remaining_seconds = (obj.reserved_until - timezone.now()).total_seconds()
+        if remaining_seconds <= 0:
+            return 0
+        return int(remaining_seconds // 60)
 
 
 # CartItemWriteSerializer - for POST/PATCH

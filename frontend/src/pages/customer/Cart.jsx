@@ -11,11 +11,21 @@ const Cart = () => {
   const [error, setError] = useState("");
   const [updatingId, setUpdatingId] = useState(null); // which item are we currently updating
 
+  const [showInfoBanner, setShowInfoBanner] = useState(true);
+  const [expiredToast, setExpiredToast] = useState(false);
+  const [localMins, setLocalMins] = useState({});
+
   // ── Fetch cart ──
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (isRefresh = false) => {
     try {
       const res = await api.get("/orders/cart/");
-      setCart(res.data);
+      setCart((prevCart) => {
+        if (isRefresh && prevCart && prevCart.items.length > (res.data?.items?.length || 0)) {
+           setExpiredToast(true);
+           setTimeout(() => setExpiredToast(false), 6000);
+        }
+        return res.data;
+      });
       setError("");
     } catch {
       setError("Failed to load your cart. Please try again.");
@@ -26,6 +36,42 @@ const Cart = () => {
 
   useEffect(() => {
     fetchCart();
+  }, [fetchCart]);
+
+  useEffect(() => {
+    const handleFocus = () => fetchCart(true);
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [fetchCart]);
+
+  useEffect(() => {
+    if (cart?.items) {
+      const initialMins = {};
+      cart.items.forEach(item => {
+        initialMins[item.id] = typeof item.minutes_remaining === 'number' ? item.minutes_remaining : 15;
+      });
+      setLocalMins(initialMins);
+    }
+  }, [cart]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLocalMins(prev => {
+        let shouldRefetch = false;
+        const next = { ...prev };
+        Object.keys(next).forEach(id => {
+          if (next[id] > 0) {
+            next[id] -= 1;
+            if (next[id] === 0) shouldRefetch = true;
+          }
+        });
+        if (shouldRefetch) {
+          fetchCart(true);
+        }
+        return next;
+      });
+    }, 60000);
+    return () => clearInterval(interval);
   }, [fetchCart]);
 
   // ── Update quantity (PATCH) ──
@@ -159,6 +205,30 @@ const Cart = () => {
           </Link>
         </div>
 
+        {/* ── Info Banner (Cart Expiry) ── */}
+        {showInfoBanner && items.length > 0 && (
+          <div className="mb-6 relative bg-[#eff6ff] dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-sm font-bold rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl hover:scale-110 transition-transform">⏳</span>
+              <p>Items in your cart are reserved for 15 minutes. Complete your purchase before they expire.</p>
+            </div>
+            <button onClick={() => setShowInfoBanner(false)} className="shrink-0 p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-colors">
+              <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
+        {/* ── Toast Notification for Expired Items ── */}
+        {expiredToast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-[#111812] dark:bg-[#E8F3EB] text-white dark:text-[#111812] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-sm animate-in slide-in-from-bottom-10 fade-in duration-500">
+            <span className="text-xl">🕒</span>
+            Some items in your cart expired and were removed
+            <button onClick={() => setExpiredToast(false)} className="ml-2 hover:opacity-70">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+
         {/* ── Error banner ── */}
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm font-medium rounded-lg px-4 py-3">
@@ -238,6 +308,16 @@ const Cart = () => {
                         <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-widest">
                           ₹{parseFloat(item.product?.price).toFixed(2)} / <span className="text-emerald-600 dark:text-emerald-500">{item.product?.unit}</span>
                         </p>
+                        {localMins[item.id] !== undefined && !isUnavailable && (
+                          <div className={`mt-3 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg w-fit transition-colors ${
+                            localMins[item.id] <= 5
+                              ? "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200/50 dark:border-orange-800/50 animate-pulse"
+                              : "bg-gray-50 dark:bg-gray-800/40 text-gray-500 dark:text-gray-400"
+                          }`}>
+                            {localMins[item.id] <= 5 && <span className="text-sm">⚠️</span>}
+                            Reserved for {localMins[item.id]} mins
+                          </div>
+                        )}
                       </div>
 
                       {/* Remove button */}

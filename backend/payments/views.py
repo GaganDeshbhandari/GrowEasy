@@ -10,6 +10,7 @@ from accounts.models import Address
 from accounts.permissions import CustomerPermission
 from orders.models import Cart, CartItem, Order, OrderItem
 from products.models import Product
+from utils.cart_expiry import clear_expired_cart_items
 
 from .razorpay_client import client
 from .serializers import CreateRazorpayOrderSerializer, VerifyPaymentSerializer
@@ -36,6 +37,8 @@ class CreateRazorpayOrderView(generics.GenericAPIView):
         cart = Cart.objects.filter(id=cart_id, customer=customer).prefetch_related("items__product").first()
         if not cart:
             return Response({"detail": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        clear_expired_cart_items(cart)
 
         if not cart.items.exists():
             return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)

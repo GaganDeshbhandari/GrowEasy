@@ -1,0 +1,15 @@
+--- frontend/src/pages/customer/Checkout.jsx
++++ frontend/src/pages/customer/Checkout.jsx
+@@ -530,2 +530,12 @@
+             )}
++            
++            {showExpiredModal && (
++                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
++                    <div className="bg-white p-6 rounded shadow-lg text-center">
++                        <h2 className="text-xl font-bold mb-4">Cart Expired</h2>
++                        <p className="mb-4">Your cart items have expired and were removed.</p>
++                        <button onClick={() => navigate('/cart')} className="bg-red-500 text-white px-4 py-2 rounded">Go to Cart</button>
++                    </div>
++                </div>
++            )}
+ 

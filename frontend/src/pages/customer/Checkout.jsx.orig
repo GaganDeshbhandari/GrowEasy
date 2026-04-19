@@ -102,7 +102,7 @@ const Checkout = () => {
         };
 
         fetchCheckoutData();
-
+        
         const handleFocus = () => fetchCheckoutData();
         window.addEventListener("focus", handleFocus);
         return () => window.removeEventListener("focus", handleFocus);
@@ -447,7 +447,7 @@ const Checkout = () => {
                 error?.response?.data?.detail ||
                 error?.response?.data?.error ||
                 "Failed to initiate payment. Please try again.";
-
+                
             if (error?.response?.status === 400 && (typeof message === 'string' && message.toLowerCase().includes('stock'))) {
                 setOutOfStockError(message);
             } else {
@@ -535,6 +535,16 @@ const Checkout = () => {
                         >
                             Return to Cart
                         </button>
+                    </div>
+                </div>
+            )}
+            
+            {showExpiredModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white p-6 rounded shadow-lg text-center">
+                        <h2 className="text-xl font-bold mb-4">Cart Expired</h2>
+                        <p className="mb-4">Your cart items have expired and were removed.</p>
+                        <button onClick={() => navigate('/cart')} className="bg-red-500 text-white px-4 py-2 rounded">Go to Cart</button>
                     </div>
                 </div>
             )}

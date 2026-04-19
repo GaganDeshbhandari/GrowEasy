@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Sum
+from django.utils import timezone
 from .models import Product, ProductCategory, ProductImage
 from accounts.models import FarmerProfile
 from orders.models import CartItem
@@ -46,7 +47,11 @@ class ProductReadSerializer(serializers.ModelSerializer):
         read_only_fields = ['farmer', 'farmer_id', 'created_at', 'updated_at', 'images', 'categories']
 
     def get_available_stock(self, obj):
-        reserved = CartItem.objects.filter(product=obj).aggregate(total=Sum('quantity'))['total'] or 0
+        now = timezone.now()
+        reserved = CartItem.objects.filter(
+            product=obj,
+            reserved_until__gt=now
+        ).aggregate(total=Sum('quantity'))['total'] or 0
         return max(obj.stock - reserved, 0)
 
 

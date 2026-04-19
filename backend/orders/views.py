@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from accounts.permissions import CustomerPermission, FarmerPermission
 from .models import Cart, CartItem, Order, OrderItem
+from utils.cart_expiry import clear_expired_cart_items
 from .serializers import (
     CartSerializer,
     CartItemSerializer,
@@ -20,6 +21,7 @@ class CartView(generics.RetrieveAPIView):
 
     def get_object(self):
         cart, created = Cart.objects.get_or_create(customer=self.request.user.customerprofile)
+        clear_expired_cart_items(cart)
         return cart
 
 
@@ -36,6 +38,8 @@ class CartItemAddView(generics.CreateAPIView):
         return context
 
     def create(self, request, *args, **kwargs):
+        cart, _ = Cart.objects.get_or_create(customer=self.request.user.customerprofile)
+        clear_expired_cart_items(cart)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         cart_item = serializer.save()
@@ -55,6 +59,7 @@ class CartItemUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
+        clear_expired_cart_items(instance.cart)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_item = serializer.save()
