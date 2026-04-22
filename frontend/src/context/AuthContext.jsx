@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
 
         // Validate cookie session and rotate tokens before restoring UI user state.
         await api.post("/auth/refreshToken/");
-        
+
         // Hydrate location for customers strictly on initialization
         if (parsedUser.role === "customer") {
           try {
@@ -39,6 +39,17 @@ export const AuthProvider = ({ children }) => {
             parsedUser.longitude = profileRes.data.longitude;
           } catch (e) {
             console.warn("Failed to securely hydrate location on boot", e);
+          }
+        }
+
+        // Hydrate location for delivery partners strictly on initialization
+        if (parsedUser.role === "delivery_partner") {
+          try {
+            const profileRes = await api.get("/delivery/me/");
+            parsedUser.latitude = profileRes.data.latitude;
+            parsedUser.longitude = profileRes.data.longitude;
+          } catch (e) {
+            console.warn("Failed to securely hydrate delivery location on boot", e);
           }
         }
 

@@ -17,8 +17,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     # Syntax for validation for a specific field is validate_<field_name>
     def validate_role(self, value):
         normalized = value.strip().lower()
-        if normalized not in ['farmer', 'customer']:
-            raise serializers.ValidationError("Role must be farmer or customer")
+        if normalized not in ['farmer', 'customer', 'delivery_partner']:
+            raise serializers.ValidationError("Role must be farmer, customer, or delivery_partner")
         return normalized
 
     # Method to validate between two fields

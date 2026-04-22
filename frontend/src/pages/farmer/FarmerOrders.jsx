@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../api/axios";
-import { 
+import {
     UserIcon,
     MapPinIcon,
     ShoppingBagIcon,
     FaceFrownIcon,
     TruckIcon
 } from "@heroicons/react/24/outline";
-import { 
-    ClockIcon as ClockSolid, 
-    CheckCircleIcon as CheckSolid, 
-    TruckIcon as TruckSolid, 
-    HomeIcon as HomeSolid, 
+import {
+    ClockIcon as ClockSolid,
+    CheckCircleIcon as CheckSolid,
+    TruckIcon as TruckSolid,
+    HomeIcon as HomeSolid,
     XCircleIcon as XSolid,
     ExclamationCircleIcon as DefaultSolid
 } from "@heroicons/react/24/solid";
@@ -20,8 +20,20 @@ const PAGE_SIZE_DEFAULT = 10;
 
 const getStatusConfig = (statusString) => {
     const status = String(statusString || "").toLowerCase();
-    
+
     const config = {
+        processing: {
+            bg: "bg-orange-50 dark:bg-orange-500/10",
+            text: "text-orange-700 dark:text-orange-400",
+            border: "border-orange-200 dark:border-orange-500/20",
+            icon: ClockSolid,
+        },
+        ready_for_pickup: {
+            bg: "bg-indigo-50 dark:bg-indigo-500/10",
+            text: "text-indigo-700 dark:text-indigo-400",
+            border: "border-indigo-200 dark:border-indigo-500/20",
+            icon: TruckSolid,
+        },
         pending: {
             bg: "bg-yellow-50 dark:bg-yellow-500/10",
             text: "text-yellow-700 dark:text-yellow-400",
@@ -62,6 +74,17 @@ const getStatusConfig = (statusString) => {
     };
 };
 
+const getStatusLabel = (statusString) => {
+    const status = String(statusString || "").toLowerCase();
+    const labels = {
+        processing: "Processing",
+        ready_for_pickup: "Ready for Pickup",
+        out_for_delivery: "Out for Delivery",
+        delivered: "Delivered",
+    };
+    return labels[status] || (statusString || "Unknown");
+};
+
 const FarmerOrders = () => {
 	const [orders, setOrders] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -75,6 +98,9 @@ const FarmerOrders = () => {
 	const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
 	const [hasNext, setHasNext] = useState(false);
 	const [hasPrevious, setHasPrevious] = useState(false);
+    const [confirmDispatchOrder, setConfirmDispatchOrder] = useState(null);
+    const [dispatchLoadingId, setDispatchLoadingId] = useState(null);
+    const [successMessage, setSuccessMessage] = useState("");
 
 	const fetchFarmerOrders = async (page = 1) => {
 		try {
@@ -154,6 +180,24 @@ const FarmerOrders = () => {
 		return `${quantityText} qty`;
 	};
 
+    const handleDispatch = async (orderId) => {
+        try {
+            setDispatchLoadingId(orderId);
+            await api.patch(`/orders/${orderId}/dispatch/`, {}, { withCredentials: true });
+            setOrders((prev) =>
+                prev.map((item) =>
+                    item.id === orderId ? { ...item, status: "ready_for_pickup" } : item
+                )
+            );
+            setSuccessMessage("Order dispatched successfully!");
+            setConfirmDispatchOrder(null);
+        } catch {
+            setError("Failed to dispatch order. Please try again.");
+        } finally {
+            setDispatchLoadingId(null);
+        }
+    };
+
 	if (loading) {
 		return (
 			<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 px-4 md:px-8 transition-colors duration-500">
@@ -190,7 +234,7 @@ const FarmerOrders = () => {
 	return (
 		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				
+
                 {/* Premium Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-gray-200 dark:border-gray-800/80 pb-8">
 					<div className="max-w-2xl">
@@ -220,25 +264,25 @@ const FarmerOrders = () => {
 							className="block w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-gray-800/60 rounded-xl bg-gray-50 dark:bg-[#1A241A] text-sm font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-gray-900 dark:text-gray-100 outline-none transition-all placeholder-gray-400"
 						/>
 					</div>
-					
+
 					{/* Status Filter Custom Dropdown */}
 					<div className="sm:w-56 relative block cursor-pointer">
                         {/* Backdrop overlay for closing */}
                         {isStatusDropdownOpen && (
-                            <div 
-                                className="fixed inset-0 z-40" 
+                            <div
+                                className="fixed inset-0 z-40"
                                 onClick={() => setIsStatusDropdownOpen(false)}
                             />
                         )}
-						<button 
+						<button
                             type="button"
                             onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
                             className="relative z-50 w-full flex items-center justify-between pl-4 pr-10 py-3 text-sm font-bold border border-gray-200 dark:border-gray-800/60 rounded-xl bg-gray-50 dark:bg-[#1A241A] focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-gray-700 dark:text-gray-200 outline-none transition-all text-left"
                         >
                             <span className="block truncate">
-                                {statusFilter === "all" ? "All Statuses" : 
-                                 statusFilter === "pending" ? "Pending" : 
-                                 statusFilter === "completed" ? "Completed" : 
+                                {statusFilter === "all" ? "All Statuses" :
+                                 statusFilter === "pending" ? "Pending" :
+                                 statusFilter === "completed" ? "Completed" :
                                  statusFilter === "cancelled" ? "Cancelled" : "All Statuses"}
                             </span>
                             <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -249,7 +293,7 @@ const FarmerOrders = () => {
                         </button>
 
                         {/* Dropdown Menu */}
-                        <div 
+                        <div
                             className={`absolute z-50 left-0 right-0 mt-2 bg-white dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 rounded-xl shadow-xl overflow-hidden transition-all duration-300 origin-top
                             ${isStatusDropdownOpen ? 'opacity-100 scale-y-100 translate-y-0 visible' : 'opacity-0 scale-y-95 -translate-y-2 invisible'}`}
                         >
@@ -268,8 +312,8 @@ const FarmerOrders = () => {
                                             setIsStatusDropdownOpen(false);
                                         }}
                                         className={`w-full text-left px-3 py-2 text-sm font-bold rounded-lg transition-colors
-                                            ${statusFilter === option.value 
-                                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' 
+                                            ${statusFilter === option.value
+                                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                                                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-gray-200'
                                             }
                                         `}
@@ -288,6 +332,12 @@ const FarmerOrders = () => {
                         {error}
 					</div>
 				)}
+
+                {successMessage && (
+                    <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30 rounded-xl text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                        {successMessage}
+                    </div>
+                )}
 
 				{filteredOrders.length === 0 ? (
 					<div className="flex flex-col items-center justify-center p-12 md:p-24 rounded-[32px] bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800 shadow-sm text-center">
@@ -336,11 +386,11 @@ const FarmerOrders = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="pl-14 pt-2">
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-sm ${sc.bg} ${sc.text} ${sc.border}`}>
                                                     <StatusIcon className="w-4 h-4" />
-                                                    {item.status || "Unknown"}
+                                                    {getStatusLabel(item.status)}
                                                 </span>
                                             </div>
 										</div>
@@ -398,12 +448,17 @@ const FarmerOrders = () => {
                                                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{address.phone || "-"}</p>
                                                 </div>
                                             </div>
-                                            
+
                                             <div className="pt-2">
-                                                <button className="w-full flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[13px] py-3 rounded-xl transition-all duration-300 border border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 group/dispatch">
-                                                    <TruckIcon className="w-4 h-4 group-hover/dispatch:translate-x-1 transition-transform" />
-                                                    DISPATCH ORDER
-                                                </button>
+                                                {String(item.status || "").toLowerCase() === "processing" && (
+                                                    <button
+                                                        onClick={() => setConfirmDispatchOrder(item)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[13px] py-3 rounded-xl transition-all duration-300 border border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 group/dispatch"
+                                                    >
+                                                        <TruckIcon className="w-4 h-4 group-hover/dispatch:translate-x-1 transition-transform" />
+                                                        DISPATCH ORDER
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -437,6 +492,37 @@ const FarmerOrders = () => {
 					</>
 				)}
 			</div>
+
+            {confirmDispatchOrder && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDispatchOrder(null)} />
+                    <div className="relative max-w-lg w-full bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800 rounded-2xl p-6">
+                        <h3 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] mb-3">Dispatch this order?</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-5">
+                            Are you sure you want to dispatch this order?
+                            <br />
+                            It will be listed for delivery partners to pick up.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmDispatchOrder(null)}
+                                className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDispatch(confirmDispatchOrder.id)}
+                                disabled={dispatchLoadingId === confirmDispatchOrder.id}
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black disabled:opacity-70"
+                            >
+                                {dispatchLoadingId === confirmDispatchOrder.id ? "Dispatching..." : "Confirm Dispatch"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 		</div>
 	);
 };

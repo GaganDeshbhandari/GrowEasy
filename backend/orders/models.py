@@ -36,8 +36,12 @@ class CartItem(models.Model):
 class Order(models.Model):
     class Status(models.TextChoices):
         PENDING    = "pending",    "Pending"
+        PROCESSING = "processing", "Processing"
+        DISPATCHED = "dispatched", "Dispatched"
         CONFIRMED  = "confirmed",  "Confirmed"
         SHIPPED    = "shipped",    "Shipped"
+        READY_FOR_PICKUP = "ready_for_pickup", "Ready for Pickup"
+        OUT_FOR_DELIVERY = "out_for_delivery", "Out for Delivery"
         DELIVERED  = "delivered",  "Delivered"
         CANCELLED  = "cancelled",  "Cancelled"
 
