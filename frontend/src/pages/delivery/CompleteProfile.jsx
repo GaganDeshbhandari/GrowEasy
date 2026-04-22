@@ -30,6 +30,7 @@ const CompleteProfile = () => {
     latitude: "",
     longitude: "",
   });
+  const [selectedAddress, setSelectedAddress] = useState("Location not selected yet.");
   const [geoLoading, setGeoLoading] = useState(false);
   const [leafletReady, setLeafletReady] = useState(false);
   const mapRef = useRef(null);
@@ -48,6 +49,7 @@ const CompleteProfile = () => {
     ifsc_code: "",
     upi_id: "",
   });
+  const [payoutType, setPayoutType] = useState("");
 
   const hasBank = useMemo(() => {
     return (
@@ -188,6 +190,41 @@ const CompleteProfile = () => {
     mapInstanceRef.current = map;
   }, [activeStep, leafletReady, locationForm.latitude, locationForm.longitude, locationTab]);
 
+  useEffect(() => {
+    const lat = Number(locationForm.latitude);
+    const lng = Number(locationForm.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setSelectedAddress("Location not selected yet.");
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadAddress = async () => {
+      try {
+        setSelectedAddress("Fetching selected address...");
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+          {
+            signal: controller.signal,
+            headers: { Accept: "application/json" },
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch address");
+        const data = await response.json();
+        setSelectedAddress(data?.display_name || "Address not available.");
+      } catch {
+        if (!controller.signal.aborted) {
+          setSelectedAddress("Address not available.");
+        }
+      }
+    };
+
+    loadAddress();
+    return () => controller.abort();
+  }, [locationForm.latitude, locationForm.longitude]);
+
   const updateProfileStatus = async (field, value) => {
     return Promise.resolve({ field, value });
   };
@@ -226,7 +263,7 @@ const CompleteProfile = () => {
         longitude: pos.coords.longitude.toFixed(6),
       });
     } catch {
-      setError("Unable to detect current location. Please try map/manual selection.");
+      setError("Unable to detect current location. Please try map selection.");
     } finally {
       setGeoLoading(false);
     }
@@ -303,11 +340,14 @@ const CompleteProfile = () => {
   };
 
   const saveStep4 = async () => {
-    if (!hasBank && !hasUpi) {
-      throw new Error("Add at least one payout method: Bank details or UPI.");
+    if (!payoutType) {
+      throw new Error("Select one payout method first: Bank Details or UPI.");
     }
 
-    if (hasBank) {
+    if (payoutType === "bank") {
+      if (!hasBank) {
+        throw new Error("Please fill all required bank details.");
+      }
       await api.post(
         "/delivery/bank-details/",
         {
@@ -316,13 +356,16 @@ const CompleteProfile = () => {
           bank_name: bankDetails.bank_name || "",
           account_number: bankDetails.account_number || "",
           ifsc_code: bankDetails.ifsc_code || "",
-          is_primary: !hasUpi,
+          is_primary: true,
         },
         { withCredentials: true }
       );
     }
 
-    if (hasUpi) {
+    if (payoutType === "upi") {
+      if (!hasUpi) {
+        throw new Error("Please enter a valid UPI ID.");
+      }
       await api.post(
         "/delivery/bank-details/",
         {
@@ -500,7 +543,6 @@ const CompleteProfile = () => {
                 {[
                   { key: "detect", label: "Detect Current Location" },
                   { key: "map", label: "Choose on Map" },
-                  { key: "manual", label: "Enter Manually" },
                 ].map((tab) => (
                   <button
                     key={tab.key}
@@ -534,25 +576,9 @@ const CompleteProfile = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Latitude</label>
-                  <input
-                    type="text"
-                    value={locationForm.latitude}
-                    onChange={(e) => setLocationForm((prev) => ({ ...prev, latitude: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Longitude</label>
-                  <input
-                    type="text"
-                    value={locationForm.longitude}
-                    onChange={(e) => setLocationForm((prev) => ({ ...prev, longitude: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 outline-none focus:border-emerald-500"
-                  />
-                </div>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1A241A] px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Selected Address</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 break-words">{selectedAddress}</p>
               </div>
             </div>
           )}
@@ -601,7 +627,27 @@ const CompleteProfile = () => {
             <div className="space-y-6">
               <h2 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight">Step 4: Bank / UPI Details</h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "bank", label: "Bank Details" },
+                  { key: "upi", label: "UPI Details" },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setPayoutType(item.key)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${payoutType === item.key ? "bg-emerald-600 text-white" : "bg-gray-100 dark:bg-[#1A241A] text-gray-700 dark:text-gray-300"}`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {!payoutType && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Select one payout method to continue.</p>
+              )}
+
+              {payoutType === "bank" && (
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-5 bg-gray-50 dark:bg-[#1A241A]">
                   <h3 className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] mb-4">Bank Account</h3>
                   <div className="space-y-3">
@@ -635,7 +681,9 @@ const CompleteProfile = () => {
                     />
                   </div>
                 </div>
+              )}
 
+              {payoutType === "upi" && (
                 <div className="rounded-2xl border border-gray-200 dark:border-gray-800 p-5 bg-gray-50 dark:bg-[#1A241A]">
                   <h3 className="text-lg font-black text-[#111812] dark:text-[#E8F3EB] mb-4">UPI</h3>
                   <input
@@ -645,9 +693,8 @@ const CompleteProfile = () => {
                     onChange={(e) => setBankDetails((prev) => ({ ...prev, upi_id: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#111812] border border-gray-200 dark:border-gray-800"
                   />
-                  <p className="text-xs text-gray-500 mt-2">Add bank details or UPI. At least one is required.</p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
