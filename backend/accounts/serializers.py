@@ -171,14 +171,14 @@ class FarmerRatingSerializer(serializers.ModelSerializer):
 
 
 class FarmerCertificationSerializer(serializers.ModelSerializer):
-    certificate_name = serializers.CharField(source='title')
+    # certificate_name = serializers.CharField(source='title')
 
     class Meta:
         model = FarmerCertification
         fields = [
             'id',
+            'title',
             'farmer',
-            'certificate_name',
             'issued_by',
             'issued_date',
             'certificate_image',
