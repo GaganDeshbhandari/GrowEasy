@@ -2,6 +2,8 @@ from rest_framework import generics
 from rest_framework import status
 
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.core.cache import cache
+from django.conf import settings
 from rest_framework.response import Response
 from accounts.permissions import FarmerPermission
 from utils.distance import get_distance_km
@@ -21,6 +23,8 @@ class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.filter(is_active=True).select_related('farmer').prefetch_related('images', 'categories')
 
     def get_queryset(self):
+        cache_key = "all_active_products"
+        cached = cache.get(cache_key)
         queryset = Product.objects.filter(is_active=True).select_related(
             'farmer', 'farmer__user'
         ).prefetch_related('images', 'categories')
@@ -29,7 +33,9 @@ class ProductListCreateView(generics.ListCreateAPIView):
         if category_id:
             queryset = queryset.filter(categories__id=category_id)
 
-        return queryset.distinct()
+        queryset = list(queryset.distinct())
+        cache.set(cache_key,queryset,settings.CACHE_TTL)
+        return queryset
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -181,6 +187,22 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Only allow farmer to update/delete their own products
         return Product.objects.filter(farmer=self.request.user.farmerprofile)
 
+    def retrieve(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        cache_key = f'product_detail_{pk}'
+        cached = cache.get(cache_key)
+
+        if cached is not None:
+            return Response(cached)
+
+        instance = self.get_object()
+        serializer = ProductReadSerializer(
+            instance,
+            context=self.get_serializer_context()
+        )
+        cache.set(cache_key, serializer.data, settings.CACHE_TTL)
+        return Response(serializer.data)
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -194,6 +216,9 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
         write_serializer.is_valid(raise_exception=True)
         self.perform_update(write_serializer)
+
+        cache.delete(f'product_detail_{instance.pk}')
+        cache.delete('all_active_products')
 
         # Refresh the instance so the response includes updated relations
         # (e.g., images/categories) instead of returning stale pre-update data.
@@ -210,6 +235,12 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
             context=self.get_serializer_context(),
         )
         return Response(read_serializer.data, status=status.HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        # Invalidate cache before deleting
+        cache.delete(f'product_detail_{instance.pk}')
+        cache.delete('all_active_products')
+        instance.delete()
 
 
 # 3. FarmerProductListView - List products for the logged-in farmer
@@ -229,7 +260,17 @@ class ProductCategoryListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = ProductCategorySerializer
     pagination_class = None
-    queryset = ProductCategory.objects.all().order_by('name')
+
+    def get_queryset(self):
+        cache_key = 'product_categories'
+        cached = cache.get(cache_key)
+
+        if cached is not None:
+            return cached
+
+        queryset = list(ProductCategory.objects.all().order_by('name'))
+        cache.set(cache_key, queryset, settings.CACHE_TTL)
+        return queryset
 
 
 

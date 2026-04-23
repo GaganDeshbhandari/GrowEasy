@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
 from smtplib import SMTPException
+from django.core.cache import cache
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -209,7 +210,20 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
   permission_classes = [permissions.IsAuthenticated, CustomerPermission]
 
   def get_object(self):
-    return CustomerProfile.objects.get(user=self.request.user)
+        pk = self.kwargs['pk']
+        cache_key = f'farmer_public_profile_{pk}'
+        cached = cache.get(cache_key)
+
+        if cached is not None:
+            return cached
+
+        farmer = get_object_or_404(
+            FarmerProfile.objects.select_related('user')
+            .prefetch_related('certificates', 'ratings'),
+            pk=pk
+        )
+        cache.set(cache_key, farmer, settings.CACHE_TTL)
+        return farmer
 
 
 class AddressListCreateView(generics.ListCreateAPIView):

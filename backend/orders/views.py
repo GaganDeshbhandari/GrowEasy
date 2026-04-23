@@ -5,7 +5,7 @@ from django.db import transaction
 from accounts.permissions import CustomerPermission, FarmerPermission
 from .models import Cart, CartItem, Order, OrderItem
 from utils.cart_expiry import clear_expired_cart_items
-from utils.location import haversine
+# from utils.location import haversine
 from delivery.models import Delivery, DeliveryPartnerProfile
 from .serializers import (
     CartSerializer,

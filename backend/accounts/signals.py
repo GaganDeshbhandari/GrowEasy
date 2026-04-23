@@ -6,6 +6,7 @@ from .models import CustomUser, FarmerProfile, CustomerProfile
 from delivery.models import DeliveryPartnerProfile
 from orders.models import Cart
 
+from django.core.cache import cache
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -25,3 +26,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 
     elif instance.role == 'delivery_partner':
         DeliveryPartnerProfile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=FarmerProfile)
+def invalidate_farmer_profile_cache(sender, instance, **kwargs):
+    cache.delete(f'farmer_public_profile_{instance.pk}')
