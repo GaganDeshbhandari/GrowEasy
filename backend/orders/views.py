@@ -1,9 +1,12 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from django.db import transaction
 from accounts.permissions import CustomerPermission, FarmerPermission
 from .models import Cart, CartItem, Order, OrderItem
 from utils.cart_expiry import clear_expired_cart_items
+from utils.distance import get_distance_km
+from delivery.models import Delivery, DeliveryPartnerProfile
 from .serializers import (
     CartSerializer,
     CartItemSerializer,
@@ -173,4 +176,78 @@ class FarmerOrderListView(generics.ListAPIView):
         return OrderItem.objects.filter(
             product__farmer=farmer_profile,
             order__payment_status=Order.PaymentStatus.PAID
+        )
+
+
+class DispatchOrderView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated, FarmerPermission]
+
+    def patch(self, request, pk):
+        farmer_profile = request.user.farmerprofile
+
+        order = Order.objects.filter(
+            pk=pk,
+            payment_status=Order.PaymentStatus.PAID
+        ).prefetch_related('order_items__product__farmer').first()
+
+        if not order:
+            return Response({'detail': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        has_farmer_item = order.order_items.filter(product__farmer=farmer_profile).exists()
+        if not has_farmer_item:
+            return Response({'detail': 'You cannot dispatch this order'}, status=status.HTTP_403_FORBIDDEN)
+
+        if order.status in [Order.Status.CANCELLED, Order.Status.DELIVERED]:
+            return Response({'detail': 'Order cannot be dispatched'}, status=status.HTTP_400_BAD_REQUEST)
+
+        customer = order.customer
+        if customer.latitude is None or customer.longitude is None:
+            return Response(
+                {'detail': 'Customer location is not available for dispatch'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        available_partners = DeliveryPartnerProfile.objects.filter(
+            is_available=True,
+            latitude__isnull=False,
+            longitude__isnull=False,
+            user__role='delivery_partner'
+        ).select_related('user')
+
+        nearest_partner = None
+        nearest_distance = None
+
+        for partner in available_partners:
+            distance = get_distance_km(customer.latitude, customer.longitude, partner.latitude, partner.longitude)
+            if nearest_distance is None or distance < nearest_distance:
+                nearest_distance = distance
+                nearest_partner = partner
+
+        if not nearest_partner:
+            return Response({'detail': 'No available delivery partner found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            delivery, _ = Delivery.objects.get_or_create(order=order)
+            delivery.partner = nearest_partner
+            delivery.save(update_fields=['partner'])
+
+            order.status = Order.Status.DISPATCHED
+            order.save(update_fields=['status'])
+
+            nearest_partner.is_available = False
+            nearest_partner.save(update_fields=['is_available'])
+
+        return Response(
+            {
+                'detail': 'Order dispatched successfully',
+                'order_id': order.id,
+                'status': order.status,
+                'delivery_partner': {
+                    'id': nearest_partner.id,
+                    'name': nearest_partner.user.fullname,
+                    'phone': nearest_partner.user.phone,
+                },
+                'distance_km': round(nearest_distance, 2) if nearest_distance is not None else None,
+            },
+            status=status.HTTP_200_OK
         )

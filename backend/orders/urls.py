@@ -6,7 +6,8 @@ from .views import (
     OrderListCreateView,
     OrderDetailView,
     CancelOrderView,
-    FarmerOrderListView
+    FarmerOrderListView,
+    DispatchOrderView
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path('orders/farmer-orders/', FarmerOrderListView.as_view(), name='farmer-orders-legacy'),
     path('orders/<int:pk>/', OrderDetailView.as_view(), name='order-detail'),
     path('orders/<int:pk>/cancel/', CancelOrderView.as_view(), name='order-cancel'),
+    path('orders/<int:pk>/dispatch/', DispatchOrderView.as_view(), name='order-dispatch'),
 ]

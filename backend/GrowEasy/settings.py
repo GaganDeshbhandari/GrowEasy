@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "products",
     "orders",
     "payments",
+    "delivery",
 ]
 
 
@@ -203,3 +204,16 @@ CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 
 RAZORPAY_KEY_ID = os.environ.get("RZP_API_KEY")
 RAZORPAY_KEY_SECRET = os.environ.get("RZP_TEST_KEY")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Cache time to live
+CACHE_TTL = 60 * 15  # 15 minutes

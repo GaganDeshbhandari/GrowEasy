@@ -12,3 +12,10 @@ class CustomerPermission(BasePermission):
 
   def has_permission(self, request, view):
     return request.user.role in ['admin', 'customer']
+
+
+class DeliveryPartnerPermission(BasePermission):
+  message = "Only Delivery Partner can Access this"
+
+  def has_permission(self, request, view):
+    return request.user.role in ['admin', 'delivery_partner']

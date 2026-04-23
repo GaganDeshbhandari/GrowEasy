@@ -6,7 +6,7 @@ import { resolveMediaUrl } from "../../utils/media";
 import FarmerPaymentDetails from "./FarmerPaymentDetails";
 
 const emptyCertificationForm = {
-	certificate_name: "",
+	title: "",
 	issued_by: "",
 	issued_date: "",
 	certificate_image: null,
@@ -71,7 +71,9 @@ const FarmerProfile = () => {
 			]);
 
 			const profileData = profileRes.data;
-			const certificationsData = Array.isArray(certRes.data) ? certRes.data : [];
+			const certificationsData = Array.isArray(certRes.data?.results)
+    ? certRes.data.results
+    : certRes.data;
 
 			setProfile(profileData);
 			setCertifications(certificationsData);
@@ -407,7 +409,7 @@ const FarmerProfile = () => {
 		setCertFieldErrors({});
 
 		const payload = new FormData();
-		payload.append("certificate_name", certForm.certificate_name);
+		payload.append("title", certForm.title);
 		payload.append("issued_by", certForm.issued_by);
 		payload.append("issued_date", certForm.issued_date);
 		if (certForm.certificate_image) {
@@ -843,14 +845,14 @@ const FarmerProfile = () => {
 							<div className="sm:col-span-2">
 								<input
 									type="text"
-									name="certificate_name"
-									value={certForm.certificate_name}
+									name="title"
+									value={certForm.title}
 									onChange={handleCertInput}
 									placeholder="Certificate Name"
 									required
 									className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-800/60 bg-white dark:bg-[#111812] text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 shadow-sm"
 								/>
-								{renderCertError("certificate_name")}
+								{renderCertError("title")}
 							</div>
 
 							<div>
@@ -944,7 +946,7 @@ const FarmerProfile = () => {
 								<div key={cert.id} className="border border-gray-100 dark:border-gray-800/80 rounded-[20px] p-5 sm:p-6 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 transition-colors shadow-sm">
 									<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
 										<div className="space-y-2 flex-1">
-											<p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{cert.certificate_name}</p>
+											<p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{cert.title}</p>
 											<div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
                                                 <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                                                     <span className="text-gray-400 dark:text-gray-500 font-normal mr-1">Issued by</span>
@@ -973,7 +975,7 @@ const FarmerProfile = () => {
 
 										<div className="flex sm:flex-col items-center sm:items-end gap-4 sm:ml-4 shrink-0">
 											{imageUrl ? (
-												<img src={imageUrl} alt={cert.certificate_name} className="w-32 h-20 sm:w-24 sm:h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-800" />
+												<img src={imageUrl} alt={cert.title} className="w-32 h-20 sm:w-24 sm:h-16 rounded-xl object-cover border border-gray-200 dark:border-gray-800" />
 											) : (
 												<div className="w-32 h-20 sm:w-24 sm:h-16 rounded-xl bg-gray-50 dark:bg-[#1A241A] border border-gray-200 dark:border-gray-800/60 flex items-center justify-center">
                                                     <svg className="w-6 h-6 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -1001,7 +1003,7 @@ const FarmerProfile = () => {
 					</div>
 				)}
 			</section>
-			
+
 			{/* Payment Details Section */}
 			<FarmerPaymentDetails />
 

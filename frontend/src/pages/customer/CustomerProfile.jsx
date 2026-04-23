@@ -83,10 +83,10 @@ const CustomerProfile = () => {
 			setProfile(profileData);
 			setAddresses(addressList);
 			setProfileForm({
-				first_name: user?.first_name || "",
-				last_name: user?.last_name || "",
-				email: user?.email || "",
-				phone: user?.phone || "",
+				first_name: profileData?.first_name || user?.first_name || "",
+				last_name: profileData?.last_name || user?.last_name || "",
+				email: profileData?.email || user?.email || "",
+				phone: profileData?.phone || user?.phone || "",
 			});
 			if (profileData.latitude && profileData.longitude) {
 				setLocationCoords({ latitude: profileData.latitude, longitude: profileData.longitude });

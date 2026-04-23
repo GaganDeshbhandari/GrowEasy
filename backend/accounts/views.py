@@ -6,6 +6,8 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
+from smtplib import SMTPException
+from django.core.cache import cache
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -94,6 +96,7 @@ class LoginView(APIView):
         "email" : user.email,
         "first_name" : user.first_name,
         "last_name" : user.last_name,
+        "phone" : user.phone,
         "role" : user.role
       }
     }
@@ -199,7 +202,20 @@ class FarmerPublicProfileView(generics.RetrieveAPIView):
   permission_classes = [permissions.AllowAny]
 
   def get_object(self):
-    return get_object_or_404(FarmerProfile, pk=self.kwargs['pk'])
+        pk = self.kwargs['pk']
+        cache_key = f'farmer_public_profile_{pk}'
+        cached = cache.get(cache_key)
+
+        if cached is not None:
+            return cached
+
+        farmer = get_object_or_404(
+            FarmerProfile.objects.select_related('user')
+            .prefetch_related('certificates', 'ratings'),
+            pk=pk
+        )
+        cache.set(cache_key, farmer, settings.CACHE_TTL)
+        return farmer
 
 
 class CustomerProfileView(generics.RetrieveUpdateAPIView):
@@ -208,7 +224,6 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
 
   def get_object(self):
     return CustomerProfile.objects.get(user=self.request.user)
-
 
 class AddressListCreateView(generics.ListCreateAPIView):
   serializer_class = AddressSerializer
@@ -348,9 +363,14 @@ class ForgotPasswordView(APIView):
 
     email = serializer.validated_data['email']
 
-    try:
-      user = CustomUser.objects.get(email=email)
+    user = CustomUser.objects.filter(email__iexact=email).first()
+    if not user:
+      return Response(
+        {'detail': 'No account found with this email address.'},
+        status=status.HTTP_404_NOT_FOUND
+      )
 
+    try:
       # Delete any existing tokens for this user
       PasswordResetToken.objects.filter(user=user).delete()
 
@@ -365,9 +385,11 @@ class ForgotPasswordView(APIView):
         recipient_list=[user.email],
         fail_silently=False,
       )
-    except CustomUser.DoesNotExist:
-      # Security best practice: don't reveal if email exists
-      pass
+    except (SMTPException, OSError):
+      return Response(
+        {'detail': 'Unable to send OTP email right now. Please check email settings and try again.'},
+        status=status.HTTP_503_SERVICE_UNAVAILABLE
+      )
 
     return Response(
       {'message': f'OTP has been sent to the {email}'},
