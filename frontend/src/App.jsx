@@ -4,6 +4,8 @@ import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DeliveryProfileGuard from "./components/DeliveryProfileGuard";
+import FarmerProfileGuard from "./components/FarmerProfileGuard";
 
 // --- Auth Pages ---
 import Login from "./pages/auth/Login";
@@ -29,6 +31,15 @@ import FarmerOrders from "./pages/farmer/FarmerOrders";
 import AddProduct from "./pages/farmer/AddProduct";
 import EditProduct from "./pages/farmer/EditProduct";
 import FarmerProfile from "./pages/farmer/FarmerProfile";
+import FarmerCompleteProfile from "./pages/farmer/CompleteProfile";
+
+// --- Delivery Partner Pages ---
+import CompleteProfile from "./pages/delivery/CompleteProfile";
+import Dashboard from "./pages/delivery/Dashboard";
+import AvailableOrders from "./pages/delivery/AvailableOrders";
+import MyDeliveries from "./pages/delivery/MyDeliveries";
+import Earnings from "./pages/delivery/Earnings";
+import DeliveryProfile from "./pages/delivery/DeliveryProfile";
 
 function App() {
   return (
@@ -78,31 +89,107 @@ function App() {
           } />
 
           {/* ─── Farmer Protected Routes — must be logged in as farmer ─── */}
+          <Route path="/farmer/complete-profile" element={
+            <ProtectedRoute allowedRole="farmer">
+              <FarmerCompleteProfile />
+            </ProtectedRoute>
+          } />
           <Route path="/farmer/dashboard" element={
             <ProtectedRoute allowedRole="farmer">
-              <FarmerDashboard />
+              <FarmerProfileGuard>
+                <FarmerDashboard />
+              </FarmerProfileGuard>
             </ProtectedRoute>
           } />
           <Route path="/farmer/orders" element={
             <ProtectedRoute allowedRole="farmer">
-              <FarmerOrders />
+              <FarmerProfileGuard>
+                <FarmerOrders />
+              </FarmerProfileGuard>
             </ProtectedRoute>
           } />
           <Route path="/farmer/products/add" element={
             <ProtectedRoute allowedRole="farmer">
-              <AddProduct />
+              <FarmerProfileGuard>
+                <AddProduct />
+              </FarmerProfileGuard>
             </ProtectedRoute>
           } />
           <Route path="/farmer/products/edit/:id" element={
             <ProtectedRoute allowedRole="farmer">
-              <EditProduct />
+              <FarmerProfileGuard>
+                <EditProduct />
+              </FarmerProfileGuard>
             </ProtectedRoute>
           } />
           <Route path="/profile/farmer" element={
             <ProtectedRoute allowedRole="farmer">
-              <FarmerProfile />
+              <FarmerProfileGuard>
+                <FarmerProfile />
+              </FarmerProfileGuard>
             </ProtectedRoute>
           } />
+
+          {/* ─── Delivery Partner Routes ─── */}
+          <Route
+            path="/delivery/complete-profile"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <CompleteProfile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/delivery/dashboard"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <DeliveryProfileGuard>
+                  <Dashboard />
+                </DeliveryProfileGuard>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/orders"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <DeliveryProfileGuard>
+                  <AvailableOrders />
+                </DeliveryProfileGuard>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/my-deliveries"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <DeliveryProfileGuard>
+                  <MyDeliveries />
+                </DeliveryProfileGuard>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/earnings"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <DeliveryProfileGuard>
+                  <Earnings />
+                </DeliveryProfileGuard>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/profile"
+            element={
+              <ProtectedRoute allowedRole="delivery_partner">
+                <DeliveryProfileGuard>
+                  <DeliveryProfile />
+                </DeliveryProfileGuard>
+              </ProtectedRoute>
+            }
+          />
 
         </Routes>
         <Footer />

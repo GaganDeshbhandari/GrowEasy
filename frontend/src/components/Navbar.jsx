@@ -63,15 +63,22 @@ const Navbar = () => {
         : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/80 dark:hover:bg-gray-800/80"
     }`;
 
-  const logoLink = user?.role === "farmer" ? "/farmer/dashboard" : user?.role === "customer" ? "/products" : "/";
+  const logoLink =
+    user?.role === "farmer"
+      ? "/farmer/dashboard"
+      : user?.role === "delivery_partner"
+      ? "/delivery/dashboard"
+      : user?.role === "customer"
+      ? "/products"
+      : "/";
 
   return (
     <>
       <div className={`fixed top-0 left-0 right-0 z-[70] flex justify-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${scrolled ? "pt-3 px-3" : "pt-6 px-4 md:px-8"}`}>
-        <nav className={`w-full max-w-6xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-between px-5 md:px-6 
+        <nav className={`w-full max-w-6xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center justify-between px-5 md:px-6
             backdrop-blur-xl bg-white/75 dark:bg-gray-950/75 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]
             ${scrolled ? "rounded-full py-2.5 border border-gray-200/50 dark:border-gray-800/60" : "rounded-2xl py-3.5 border border-transparent"}`}>
-            
+
             {/* ── Logo ── */}
             <Link to={logoLink} className="flex items-center gap-2.5 shrink-0 group z-10 outline-none rounded-md focus-visible:ring-2 focus-visible:ring-emerald-500">
               <span className="text-2xl group-hover:rotate-[15deg] group-hover:scale-110 transition-transform duration-500 will-change-transform origin-bottom">🌱</span>
@@ -113,6 +120,16 @@ const Navbar = () => {
                   <Link to="/profile/farmer" className={linkClass("/profile/farmer")}>Profile</Link>
                 </>
               )}
+
+              {user?.role === "delivery_partner" && (
+                <>
+                  <Link to="/delivery/dashboard" className={linkClass("/delivery/dashboard")}>Dashboard</Link>
+                  <Link to="/delivery/orders" className={linkClass("/delivery/orders")}>Orders</Link>
+                  <Link to="/delivery/my-deliveries" className={linkClass("/delivery/my-deliveries")}>My Deliveries</Link>
+                  <Link to="/delivery/earnings" className={linkClass("/delivery/earnings")}>Earnings</Link>
+                  <Link to="/delivery/profile" className={linkClass("/delivery/profile")}>Profile</Link>
+                </>
+              )}
             </div>
 
             {/* ── Right Actions ── */}
@@ -143,8 +160,8 @@ const Navbar = () => {
                   </Link>
                 </>
               ) : (
-                <button 
-                  onClick={handleLogout} 
+                <button
+                  onClick={handleLogout}
                   className="text-sm font-bold text-red-600 dark:text-red-500 px-4 py-1.5 rounded-full hover:bg-red-600 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all duration-300"
                 >
                   Logout
@@ -179,7 +196,7 @@ const Navbar = () => {
       {/* ── Mobile Dropdown ── */}
       <div className={`md:hidden fixed inset-x-4 top-[72px] z-[60] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${menuOpen ? "opacity-100 translate-y-0 visible" : "opacity-0 -translate-y-4 invisible"}`}>
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl shadow-black/5 dark:shadow-black/40 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800/80">
-          
+
           <div className="p-3 flex flex-col gap-1">
             {!user && (
               <>
@@ -193,7 +210,7 @@ const Navbar = () => {
                 <Link to="/products" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Products</Link>
                 <Link to="/orders" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Orders</Link>
                 <Link to="/cart" className="px-4 py-2.5 text-sm font-medium flex items-center justify-between text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">
-                  Cart 
+                  Cart
                   {cartCount > 0 && <span className="bg-emerald-500 text-white text-[10px] font-bold rounded-full w-[18px] h-[18px] flex items-center justify-center">{cartCount > 9 ? "9+" : cartCount}</span>}
                 </Link>
                 <Link to="/profile/customer" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Profile</Link>
@@ -207,8 +224,18 @@ const Navbar = () => {
                 <Link to="/profile/farmer" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Profile</Link>
               </>
             )}
+
+            {user?.role === "delivery_partner" && (
+              <>
+                <Link to="/delivery/dashboard" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Dashboard</Link>
+                <Link to="/delivery/orders" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Orders</Link>
+                <Link to="/delivery/my-deliveries" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">My Deliveries</Link>
+                <Link to="/delivery/earnings" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Earnings</Link>
+                <Link to="/delivery/profile" className="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg">Profile</Link>
+              </>
+            )}
           </div>
-          
+
           <div className="p-3 flex flex-col gap-2">
             {!user ? (
               <>
@@ -220,7 +247,7 @@ const Navbar = () => {
                 Log out
               </button>
             )}
-            
+
             <button
               onClick={toggleTheme}
               className="mt-1 w-full flex items-center justify-center gap-2.5 px-4 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-xl uppercase tracking-widest transition-all duration-200"
@@ -234,10 +261,10 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Dim overlay for mobile menu */}
       {menuOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 z-50 bg-gray-900/20 dark:bg-black/40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setMenuOpen(false)}
         />

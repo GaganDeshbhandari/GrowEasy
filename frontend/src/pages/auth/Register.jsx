@@ -53,7 +53,8 @@ const Register = () => {
 
   const roleOptions = [
     { value: "customer", label: "Customer", desc: "Buy fresh products", icon: "🛒" },
-    { value: "farmer", label: "Farmer", desc: "Sell your harvest", icon: "🌾" }
+    { value: "farmer", label: "Farmer", desc: "Sell your harvest", icon: "🌾" },
+    { value: "delivery_partner", label: "Delivery Partner", desc: "Deliver nearby orders", icon: "🚚" }
   ];
 
   const handleRoleSelect = (roleValue) => {
@@ -87,9 +88,9 @@ const Register = () => {
       login(userData);
 
       if (userData.role === "farmer") {
-        navigate("/profile/farmer", {
-          state: { forceCompleteProfile: true },
-        });
+        navigate("/farmer/complete-profile");
+      } else if (userData.role === "delivery_partner") {
+        navigate("/delivery/complete-profile");
       } else {
         if (!userData.latitude || !userData.longitude) {
           navigate("/profile/customer", { state: { requireLocation: true } });
@@ -116,7 +117,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 font-sans">
-      
+
       {/* Left: Visual Area */}
       <div className="relative w-full md:w-5/12 lg:w-5/12 min-h-[25vh] md:min-h-screen flex flex-col justify-between p-8 md:p-12 lg:p-16 overflow-hidden bg-[#061A10] border-b md:border-b-0 md:border-r border-emerald-900/30">
         {/* Abstract Dark Organic Elements */}
@@ -127,7 +128,7 @@ const Register = () => {
           {/* Noise texture for premium tactile feel */}
           <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay" style={{backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')"}}></div>
         </div>
-        
+
         <div className="relative z-10 flex">
           <Link to="/" className="inline-flex items-center gap-3 group">
             <span className="text-4xl filter drop-shadow group-hover:scale-110 transition-transform origin-bottom duration-300">🌱</span>
@@ -149,14 +150,14 @@ const Register = () => {
       {/* Right: Form Area */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 md:py-16 overflow-y-auto relative z-10">
         <div className="w-full max-w-lg mx-auto">
-          
+
           <div className="mb-10">
             <h1 className="text-3xl font-extrabold text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-3">Create Account</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Please fill in the details below to get started.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-7">
-            
+
             {(errors.non_field_errors || errors.detail) && (
               <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-xl text-red-800 dark:text-red-400 text-sm font-medium flex items-start gap-3">
                 <span className="text-red-600 dark:text-red-500 mt-0.5">!</span>
@@ -284,12 +285,12 @@ const Register = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Click-away overlay */}
               {showRoleDropdown && (
                 <div className="fixed inset-0 z-20" onClick={() => setShowRoleDropdown(false)} />
               )}
-              
+
               <FieldError name="role" />
             </div>
 

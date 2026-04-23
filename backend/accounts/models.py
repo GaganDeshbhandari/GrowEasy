@@ -28,6 +28,7 @@ class CustomUser(AbstractUser):
   ROLE_CHOICES = [
      ('farmer', 'Farmer'),
      ('customer', 'Customer'),
+     ('delivery_partner', 'Delivery Partner'),
      ('admin', 'Admin')
   ]
   first_name = models.CharField(max_length=25, null=False, blank=False)
@@ -35,7 +36,7 @@ class CustomUser(AbstractUser):
   email = models.EmailField(unique=True)
   created_at = models.DateTimeField(auto_now_add=True)
   phone = models.CharField(max_length=15, unique=True)
-  role = models.CharField(choices=ROLE_CHOICES, max_length=15)
+  role = models.CharField(choices=ROLE_CHOICES, max_length=20)
 
   is_active  = models.BooleanField(default=True)
   is_staff   = models.BooleanField(default=False)
@@ -180,8 +181,6 @@ class FarmerBankDetail(models.Model):
         if self.type == 'bank':
             return f"Bank: {self.bank_name} ({self.farmer.user.fullname})"
         return f"UPI: {self.upi_id} ({self.farmer.user.fullname})"
-
-
 class PasswordResetToken(models.Model):
    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='password_reset_tokens')
    otp= models.CharField(max_length=6)

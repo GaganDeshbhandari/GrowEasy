@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import CustomUser, FarmerProfile, CustomerProfile
+from delivery.models import DeliveryPartnerProfile
 from orders.models import Cart
 
 
@@ -21,3 +22,6 @@ def create_user_profile(sender, instance, created, **kwargs):
     elif instance.role == 'customer':
         customer_profile = CustomerProfile.objects.create(user=instance)
         Cart.objects.create(customer=customer_profile) # Cart is assigned to the customer when he registers
+
+    elif instance.role == 'delivery_partner':
+        DeliveryPartnerProfile.objects.create(user=instance)

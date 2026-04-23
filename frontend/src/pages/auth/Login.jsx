@@ -13,7 +13,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  
+
   const getCurrentPosition = () =>
     new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -67,7 +67,25 @@ const Login = () => {
       login(userData);
 
       if (userData.role === "farmer") {
-        navigate("/farmer/dashboard");
+        try {
+          const [profileRes, bankRes] = await Promise.all([
+            api.get("/auth/farmer/profile/"),
+            api.get("/auth/farmer/bank-details/").catch(() => ({ data: [] })),
+          ]);
+          const hasCoordinates = Boolean(profileRes.data?.latitude) && Boolean(profileRes.data?.longitude);
+          const hasGender = Boolean(profileRes.data?.gender);
+          const bankDetails = Array.isArray(bankRes.data) ? bankRes.data : [];
+          const hasPayout = bankDetails.length > 0;
+          if (hasCoordinates && hasGender && hasPayout) {
+            navigate("/farmer/dashboard");
+          } else {
+            navigate("/farmer/complete-profile");
+          }
+        } catch {
+          navigate("/farmer/complete-profile");
+        }
+      } else if (userData.role === "delivery_partner") {
+        navigate("/delivery/dashboard");
       } else {
         if (!userData.latitude || !userData.longitude) {
           navigate("/profile/customer", { state: { requireLocation: true } });

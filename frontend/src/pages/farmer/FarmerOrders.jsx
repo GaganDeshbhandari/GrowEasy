@@ -22,6 +22,18 @@ const getStatusConfig = (statusString) => {
     const status = String(statusString || "").toLowerCase();
 
     const config = {
+        processing: {
+            bg: "bg-orange-50 dark:bg-orange-500/10",
+            text: "text-orange-700 dark:text-orange-400",
+            border: "border-orange-200 dark:border-orange-500/20",
+            icon: ClockSolid,
+        },
+        ready_for_pickup: {
+            bg: "bg-indigo-50 dark:bg-indigo-500/10",
+            text: "text-indigo-700 dark:text-indigo-400",
+            border: "border-indigo-200 dark:border-indigo-500/20",
+            icon: TruckSolid,
+        },
         pending: {
             bg: "bg-yellow-50 dark:bg-yellow-500/10",
             text: "text-yellow-700 dark:text-yellow-400",
@@ -62,6 +74,17 @@ const getStatusConfig = (statusString) => {
     };
 };
 
+const getStatusLabel = (statusString) => {
+    const status = String(statusString || "").toLowerCase();
+    const labels = {
+        processing: "Processing",
+        ready_for_pickup: "Ready for Pickup",
+        out_for_delivery: "Out for Delivery",
+        delivered: "Delivered",
+    };
+    return labels[status] || (statusString || "Unknown");
+};
+
 const FarmerOrders = () => {
 	const [orders, setOrders] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -75,6 +98,9 @@ const FarmerOrders = () => {
 	const [pageSize, setPageSize] = useState(PAGE_SIZE_DEFAULT);
 	const [hasNext, setHasNext] = useState(false);
 	const [hasPrevious, setHasPrevious] = useState(false);
+    const [confirmDispatchOrder, setConfirmDispatchOrder] = useState(null);
+    const [dispatchLoadingId, setDispatchLoadingId] = useState(null);
+    const [successMessage, setSuccessMessage] = useState("");
 
 	const fetchFarmerOrders = async (page = 1) => {
 		try {
@@ -153,6 +179,26 @@ const FarmerOrders = () => {
 
 		return `${quantityText} qty`;
 	};
+
+    const handleDispatch = async (orderId) => {
+        try {
+            setDispatchLoadingId(orderId);
+            await api.patch(`/orders/orders/${orderId}/dispatch/`, {}, { withCredentials: true });
+            setOrders((prev) =>
+                prev.map((item) =>
+                    item.order_id === orderId
+                    ? { ...item, status: "ready_for_pickup" }
+                    : item
+                )
+            );
+            setSuccessMessage("Order dispatched successfully!");
+            setConfirmDispatchOrder(null);
+        } catch {
+            setError("Failed to dispatch order. Please try again.");
+        } finally {
+            setDispatchLoadingId(null);
+        }
+    };
 
 	if (loading) {
 		return (
@@ -289,6 +335,12 @@ const FarmerOrders = () => {
 					</div>
 				)}
 
+                {successMessage && (
+                    <div className="mb-8 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30 rounded-xl text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                        {successMessage}
+                    </div>
+                )}
+
 				{filteredOrders.length === 0 ? (
 					<div className="flex flex-col items-center justify-center p-12 md:p-24 rounded-[32px] bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800 shadow-sm text-center">
                         <ShoppingBagIcon className="w-16 h-16 text-gray-300 dark:text-gray-700 mb-6" />
@@ -340,7 +392,7 @@ const FarmerOrders = () => {
                                             <div className="pl-14 pt-2">
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-sm ${sc.bg} ${sc.text} ${sc.border}`}>
                                                     <StatusIcon className="w-4 h-4" />
-                                                    {item.status || "Unknown"}
+                                                    {getStatusLabel(item.status)}
                                                 </span>
                                             </div>
 										</div>
@@ -399,14 +451,17 @@ const FarmerOrders = () => {
                                                 </div>
                                             </div>
 
-                                            {String(item.status || "").toLowerCase() === "processing" && (
-                                                <div className="pt-2">
-                                                    <button className="w-full flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[13px] py-3 rounded-xl transition-all duration-300 border border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 group/dispatch">
+                                            <div className="pt-2">
+                                                {(String(item.status || "").toLowerCase() === "processing" || String(item.status || "").toLowerCase() === "pending") && (
+                                                    <button
+                                                        onClick={() => setConfirmDispatchOrder(item.order_id)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[13px] py-3 rounded-xl transition-all duration-300 border border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 group/dispatch"
+                                                    >
                                                         <TruckIcon className="w-4 h-4 group-hover/dispatch:translate-x-1 transition-transform" />
                                                         DISPATCH ORDER
                                                     </button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
 
 									</div>
@@ -439,6 +494,37 @@ const FarmerOrders = () => {
 					</>
 				)}
 			</div>
+
+            {confirmDispatchOrder && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDispatchOrder(null)} />
+                    <div className="relative max-w-lg w-full bg-white dark:bg-[#111812] border border-gray-100 dark:border-gray-800 rounded-2xl p-6">
+                        <h3 className="text-2xl font-black text-[#111812] dark:text-[#E8F3EB] mb-3">Dispatch this order?</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-5">
+                            Are you sure you want to dispatch this order?
+                            <br />
+                            It will be listed for delivery partners to pick up.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmDispatchOrder(null)}
+                                className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDispatch(confirmDispatchOrder)}
+                                disabled={dispatchLoadingId === confirmDispatchOrder}
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black disabled:opacity-70"
+                            >
+                                {dispatchLoadingId === confirmDispatchOrder.id ? "Dispatching..." : "Confirm Dispatch"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 		</div>
 	);
 };

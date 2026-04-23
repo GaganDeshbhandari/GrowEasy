@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
-import { 
-  ArrowLeftIcon, 
-  MapPinIcon, 
-  CalendarIcon, 
-  CreditCardIcon, 
+import {
+  ArrowLeftIcon,
+  MapPinIcon,
+  CalendarIcon,
+  CreditCardIcon,
   ClockIcon,
   CheckCircleIcon,
   TruckIcon,
@@ -16,15 +16,19 @@ import {
 
 const getStatusConfig = (status) => {
   switch(status?.toLowerCase()) {
-    case 'pending': 
+    case 'ready_for_pickup':
+      return { style: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30", icon: TruckIcon, label: "Finding Delivery Partner" };
+    case 'out_for_delivery':
+      return { style: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-500/30", icon: TruckIcon, label: "Out for Delivery 🚚" };
+    case 'pending':
       return { style: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 border-amber-200 dark:border-amber-500/30", icon: ClockIcon, label: "Pending" };
-    case 'confirmed': 
+    case 'confirmed':
       return { style: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 border-blue-200 dark:border-blue-500/30", icon: CheckCircleIcon, label: "Confirmed" };
-    case 'shipped': 
+    case 'shipped':
       return { style: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400 border-orange-200 dark:border-orange-500/30", icon: TruckIcon, label: "Shipped" };
-    case 'delivered': 
-      return { style: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30", icon: CheckCircleIcon, label: "Delivered" };
-    case 'cancelled': 
+    case 'delivered':
+      return { style: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30", icon: CheckCircleIcon, label: "Delivered ✅" };
+    case 'cancelled':
       return { style: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-500/30", icon: XCircleIcon, label: "Cancelled" };
     default:
       return { style: "bg-gray-100 text-gray-800 dark:bg-[#1A241A] dark:text-gray-300 border-gray-200 dark:border-gray-700", icon: CubeIcon, label: status || "Unknown" };
@@ -173,7 +177,7 @@ const OrderDetail = () => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] transition-colors duration-500 py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
@@ -185,7 +189,7 @@ const OrderDetail = () => {
               Back to all orders
             </Link>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight leading-none mb-4">
-              {items.length > 0 
+              {items.length > 0
                 ? `${items[0].product_name}${items.length > 1 ? ` & ${items.length - 1} more` : ""}`
                 : `Order Details`}
             </h1>
@@ -198,7 +202,7 @@ const OrderDetail = () => {
               </span>
             </div>
           </div>
-          
+
           <div className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-[20px] font-black border-2 shadow-sm ${statusConfig.style}`}>
             <StatusIcon className="w-6 h-6" />
             <span className="tracking-wide">{statusConfig.label}</span>
@@ -248,7 +252,7 @@ const OrderDetail = () => {
                         </h3>
                         {/* FARMER DETAILS INJECTED HERE */}
                         {item.farmer_id ? (
-                          <Link 
+                          <Link
                             to={`/farmers/${item.farmer_id}`}
                             className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-3 bg-emerald-50 dark:bg-emerald-900/40 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors group/farmer"
                           >
@@ -278,7 +282,7 @@ const OrderDetail = () => {
                 })}
               </div>
             </div>
-            
+
             {order.status === "pending" && (
               <div className="flex justify-start sm:justify-start">
                 <button
@@ -297,7 +301,7 @@ const OrderDetail = () => {
           <div className="lg:col-span-5 space-y-8">
             {/* Order Summary */}
             <div className="bg-white dark:bg-[#111812] rounded-[32px] border-2 border-gray-100 dark:border-gray-800/60 p-8 shadow-[0_4px_20px_rgb(0,0,0,0.02)] sticky top-[104px]">
-              
+
               {/* Payment Info */}
               <div className="mb-8">
                  <h2 className="text-xl font-black text-[#111812] dark:text-[#E8F3EB] tracking-tight mb-6 flex items-center gap-3">
@@ -334,7 +338,7 @@ const OrderDetail = () => {
                   </div>
                   Delivery Details
                 </h2>
-                
+
                 <div className="relative pl-6 border-l-4 border-emerald-500/30 dark:border-emerald-500/20 ml-2">
                   <div className="absolute w-4 h-4 bg-emerald-500 rounded-full -left-[10px] top-1 shadow-[0_0_0_4px_white] dark:shadow-[0_0_0_4px_#111812]"></div>
                   <p className="font-black text-[#111812] dark:text-white text-lg mb-2">
@@ -357,20 +361,20 @@ const OrderDetail = () => {
       {/* Cancel Confirmation Modal */}
       {showCancelPopup && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div 
+          <div
             className="absolute inset-0 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
             onClick={() => setShowCancelPopup(false)}
           />
-          
+
           <div className="relative bg-white dark:bg-[#111812] border-2 border-gray-100 dark:border-gray-800 rounded-[32px] shadow-2xl max-w-md w-full p-8 sm:p-10 transform transition-all animate-in zoom-in-95 duration-300">
             <div className="absolute top-0 left-0 w-full h-2 bg-red-500 rounded-t-[32px]" />
-            
+
             <div className="mb-6 flex justify-center">
               <div className="w-20 h-20 rounded-[24px] bg-red-50 dark:bg-red-500/10 flex items-center justify-center border-2 border-red-100 dark:border-red-900/40">
                 <XCircleIcon className="w-10 h-10 text-red-500" />
               </div>
             </div>
-            
+
             <h3 className="text-2xl font-black text-center text-[#111812] dark:text-white tracking-tight mb-3">
               Cancel this Order?
             </h3>

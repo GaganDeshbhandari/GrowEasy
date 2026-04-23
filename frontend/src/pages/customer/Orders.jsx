@@ -3,16 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { resolveMediaUrl } from "../../utils/media";
 
-import { 
-    ClockIcon as ClockSolid, 
-    CheckCircleIcon as CheckSolid, 
-    TruckIcon as TruckSolid, 
-    HomeIcon as HomeSolid, 
+import {
+    ClockIcon as ClockSolid,
+    CheckCircleIcon as CheckSolid,
+    TruckIcon as TruckSolid,
+    HomeIcon as HomeSolid,
     XCircleIcon as XSolid,
     ExclamationCircleIcon as DefaultSolid
 } from "@heroicons/react/24/solid";
-import { 
-    ShoppingBagIcon, 
+import {
+    ShoppingBagIcon,
     FaceFrownIcon,
     ArrowRightIcon
 } from "@heroicons/react/24/outline";
@@ -21,37 +21,56 @@ const DEFAULT_PAGE_SIZE = 12;
 
 const getStatusConfig = (statusString) => {
     const status = String(statusString || "").toLowerCase();
-    
+
     const config = {
+		ready_for_pickup: {
+			bg: "bg-indigo-50 dark:bg-indigo-500/10",
+			text: "text-indigo-700 dark:text-indigo-400",
+			border: "border-indigo-200 dark:border-indigo-500/20",
+			icon: TruckSolid,
+			label: "Finding Delivery Partner",
+		},
+		out_for_delivery: {
+			bg: "bg-purple-50 dark:bg-purple-500/10",
+			text: "text-purple-700 dark:text-purple-400",
+			border: "border-purple-200 dark:border-purple-500/20",
+			icon: TruckSolid,
+			label: "Out for Delivery 🚚",
+		},
         pending: {
             bg: "bg-yellow-50 dark:bg-yellow-500/10",
             text: "text-yellow-700 dark:text-yellow-400",
             border: "border-yellow-200 dark:border-yellow-500/20",
             icon: ClockSolid,
+			label: "Pending",
         },
         confirmed: {
             bg: "bg-blue-50 dark:bg-blue-500/10",
             text: "text-blue-700 dark:text-blue-400",
             border: "border-blue-200 dark:border-blue-500/20",
             icon: CheckSolid,
+			label: "Confirmed",
         },
         shipped: {
             bg: "bg-purple-50 dark:bg-purple-500/10",
             text: "text-purple-700 dark:text-purple-400",
             border: "border-purple-200 dark:border-purple-500/20",
             icon: TruckSolid,
+			label: "Shipped",
         },
         delivered: {
             bg: "bg-green-50 dark:bg-emerald-500/10",
             text: "text-green-700 dark:text-emerald-400",
             border: "border-green-200 dark:border-emerald-500/20",
             icon: HomeSolid,
+			label: "Delivered ✅",
         },
         cancelled: {
             bg: "bg-red-50 dark:bg-red-500/10",
             text: "text-red-700 dark:text-red-400",
             border: "border-red-200 dark:border-red-500/20",
             icon: XSolid,
+			label: "Cancelled",
         },
     };
 
@@ -60,6 +79,7 @@ const getStatusConfig = (statusString) => {
         text: "text-gray-700 dark:text-gray-400",
         border: "border-gray-200 dark:border-gray-500/20",
         icon: DefaultSolid,
+		label: statusString || "Unknown",
     };
 };
 
@@ -214,7 +234,7 @@ const Orders = () => {
 	return (
 		<div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0A0F0D] py-16 transition-colors duration-500 font-sans">
 			<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-				
+
                 {/* Premium Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-gray-200 dark:border-gray-800/80 pb-8">
 					<div className="max-w-2xl">
@@ -252,7 +272,7 @@ const Orders = () => {
 							{orders.map((order, index) => {
 								const items = order.order_items || [];
                                 const firstThumbs = items.slice(0, 2);
-                                
+
                                 const sc = getStatusConfig(order.status);
                                 const StatusIcon = sc.icon;
 
@@ -270,7 +290,7 @@ const Orders = () => {
                                                 <div className="flex items-center gap-3">
                                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-sm ${sc.bg} ${sc.text} ${sc.border}`}>
                                                         <StatusIcon className="w-4 h-4" />
-                                                        {order.status || "Unknown"}
+														{sc.label}
                                                     </span>
                                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                                                         {formatDate(order.created_at)}
@@ -288,7 +308,7 @@ const Orders = () => {
                                                     <div className="space-y-4">
                                                         {firstThumbs.map((item, idx) => {
                                                             const thumb = productThumbs[item.product];
-                                                            
+
                                                             return (
                                                                 <div key={item.id || idx} className="flex items-center gap-4 group/item">
                                                                     <div className="w-14 h-14 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden shrink-0 shadow-sm relative text-gray-400">
@@ -300,7 +320,7 @@ const Orders = () => {
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    
+
                                                                     <div className="flex-1 min-w-0">
                                                                         <h4 className="text-base font-extrabold text-gray-900 dark:text-white truncate tracking-tight">
                                                                             {item.product_name}
@@ -312,7 +332,7 @@ const Orders = () => {
                                                                 </div>
                                                             );
                                                         })}
-                                                        
+
                                                         {items.length > 2 && (
                                                             <div className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-500 pt-1 ml-[72px]">
                                                                 + {items.length - 2} more item{items.length !== 3 && 's'}
