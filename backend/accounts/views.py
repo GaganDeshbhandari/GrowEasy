@@ -202,14 +202,6 @@ class FarmerPublicProfileView(generics.RetrieveAPIView):
   permission_classes = [permissions.AllowAny]
 
   def get_object(self):
-    return get_object_or_404(FarmerProfile, pk=self.kwargs['pk'])
-
-
-class CustomerProfileView(generics.RetrieveUpdateAPIView):
-  serializer_class = CustomerProfileSerializer
-  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
-
-  def get_object(self):
         pk = self.kwargs['pk']
         cache_key = f'farmer_public_profile_{pk}'
         cached = cache.get(cache_key)
@@ -225,6 +217,13 @@ class CustomerProfileView(generics.RetrieveUpdateAPIView):
         cache.set(cache_key, farmer, settings.CACHE_TTL)
         return farmer
 
+
+class CustomerProfileView(generics.RetrieveUpdateAPIView):
+  serializer_class = CustomerProfileSerializer
+  permission_classes = [permissions.IsAuthenticated, CustomerPermission]
+
+  def get_object(self):
+    return CustomerProfile.objects.get(user=self.request.user)
 
 class AddressListCreateView(generics.ListCreateAPIView):
   serializer_class = AddressSerializer

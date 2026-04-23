@@ -5,7 +5,7 @@ from django.db import transaction
 from accounts.permissions import CustomerPermission, FarmerPermission
 from .models import Cart, CartItem, Order, OrderItem
 from utils.cart_expiry import clear_expired_cart_items
-# from utils.location import haversine
+from utils.distance import get_distance_km
 from delivery.models import Delivery, DeliveryPartnerProfile
 from .serializers import (
     CartSerializer,
@@ -218,7 +218,7 @@ class DispatchOrderView(generics.GenericAPIView):
         nearest_distance = None
 
         for partner in available_partners:
-            distance = haversine(customer.latitude, customer.longitude, partner.latitude, partner.longitude)
+            distance = get_distance_km(customer.latitude, customer.longitude, partner.latitude, partner.longitude)
             if nearest_distance is None or distance < nearest_distance:
                 nearest_distance = distance
                 nearest_partner = partner
