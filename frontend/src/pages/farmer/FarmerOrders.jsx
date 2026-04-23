@@ -183,10 +183,12 @@ const FarmerOrders = () => {
     const handleDispatch = async (orderId) => {
         try {
             setDispatchLoadingId(orderId);
-            await api.patch(`/orders/${orderId}/dispatch/`, {}, { withCredentials: true });
+            await api.patch(`/orders/orders/${orderId}/dispatch/`, {}, { withCredentials: true });
             setOrders((prev) =>
                 prev.map((item) =>
-                    item.id === orderId ? { ...item, status: "ready_for_pickup" } : item
+                    item.order_id === orderId
+                    ? { ...item, status: "ready_for_pickup" }
+                    : item
                 )
             );
             setSuccessMessage("Order dispatched successfully!");
@@ -450,9 +452,9 @@ const FarmerOrders = () => {
                                             </div>
 
                                             <div className="pt-2">
-                                                {String(item.status || "").toLowerCase() === "processing" && (
+                                                {(String(item.status || "").toLowerCase() === "processing" || String(item.status || "").toLowerCase() === "pending") && (
                                                     <button
-                                                        onClick={() => setConfirmDispatchOrder(item)}
+                                                        onClick={() => setConfirmDispatchOrder(item.order_id)}
                                                         className="w-full flex items-center justify-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-[13px] py-3 rounded-xl transition-all duration-300 border border-emerald-200/60 dark:border-emerald-500/30 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95 group/dispatch"
                                                     >
                                                         <TruckIcon className="w-4 h-4 group-hover/dispatch:translate-x-1 transition-transform" />
@@ -513,8 +515,8 @@ const FarmerOrders = () => {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => handleDispatch(confirmDispatchOrder.id)}
-                                disabled={dispatchLoadingId === confirmDispatchOrder.id}
+                                onClick={() => handleDispatch(confirmDispatchOrder)}
+                                disabled={dispatchLoadingId === confirmDispatchOrder}
                                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black disabled:opacity-70"
                             >
                                 {dispatchLoadingId === confirmDispatchOrder.id ? "Dispatching..." : "Confirm Dispatch"}

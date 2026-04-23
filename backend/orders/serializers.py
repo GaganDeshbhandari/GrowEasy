@@ -226,9 +226,12 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     order_date = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
+    order_id = serializers.SerializerMethodField()
     class Meta:
         model = OrderItem
         fields = [
+            'id',
+            'order_id',
             'product_name',
             'quantity',
             'unit',
@@ -241,6 +244,7 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
             'order_date'
         ]
         read_only_fields = [
+            'id',
             'product_name',
             'quantity',
             'unit',
@@ -285,3 +289,6 @@ class FarmerOrderItemSerializer(serializers.ModelSerializer):
 
     def get_total(self, obj):
         return obj.total
+
+    def get_order_id(self, obj):
+        return obj.order.id
