@@ -35,6 +35,10 @@ export const AuthProvider = ({ children }) => {
         if (parsedUser.role === "customer") {
           try {
             const profileRes = await api.get("/auth/customer/profile/");
+            parsedUser.first_name = profileRes.data.first_name || parsedUser.first_name;
+            parsedUser.last_name = profileRes.data.last_name || parsedUser.last_name;
+            parsedUser.email = profileRes.data.email || parsedUser.email;
+            parsedUser.phone = profileRes.data.phone || parsedUser.phone;
             parsedUser.latitude = profileRes.data.latitude;
             parsedUser.longitude = profileRes.data.longitude;
           } catch (e) {

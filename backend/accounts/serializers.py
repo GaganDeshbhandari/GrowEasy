@@ -100,11 +100,42 @@ class FarmerProfileSerializer(serializers.ModelSerializer):
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    first_name = serializers.CharField(source='user.first_name')
+    last_name = serializers.CharField(source='user.last_name', allow_blank=True, required=False)
+    email = serializers.EmailField(source='user.email')
+    phone = serializers.CharField(source='user.phone')
 
     class Meta:
         model = CustomerProfile
-        fields = ['id','user','picture','latitude','longitude','created_at','updated_at']
+        fields = [
+            'id',
+            'user',
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'picture',
+            'latitude',
+            'longitude',
+            'created_at',
+            'updated_at',
+        ]
         read_only_fields = ['created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if user_data:
+            user = instance.user
+            for attr, value in user_data.items():
+                setattr(user, attr, value)
+            user.save()
+
+        return instance
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -254,4 +285,3 @@ class FarmerBankDetailSerializer(serializers.ModelSerializer):
         elif raw:
             data['account_number'] = raw
         return data
-

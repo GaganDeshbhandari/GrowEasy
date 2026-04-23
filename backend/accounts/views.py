@@ -6,6 +6,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
+from smtplib import SMTPException
 
 from rest_framework import authentication, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -94,6 +95,7 @@ class LoginView(APIView):
         "email" : user.email,
         "first_name" : user.first_name,
         "last_name" : user.last_name,
+        "phone" : user.phone,
         "role" : user.role
       }
     }
@@ -348,9 +350,14 @@ class ForgotPasswordView(APIView):
 
     email = serializer.validated_data['email']
 
-    try:
-      user = CustomUser.objects.get(email=email)
+    user = CustomUser.objects.filter(email__iexact=email).first()
+    if not user:
+      return Response(
+        {'detail': 'No account found with this email address.'},
+        status=status.HTTP_404_NOT_FOUND
+      )
 
+    try:
       # Delete any existing tokens for this user
       PasswordResetToken.objects.filter(user=user).delete()
 
@@ -365,9 +372,11 @@ class ForgotPasswordView(APIView):
         recipient_list=[user.email],
         fail_silently=False,
       )
-    except CustomUser.DoesNotExist:
-      # Security best practice: don't reveal if email exists
-      pass
+    except (SMTPException, OSError):
+      return Response(
+        {'detail': 'Unable to send OTP email right now. Please check email settings and try again.'},
+        status=status.HTTP_503_SERVICE_UNAVAILABLE
+      )
 
     return Response(
       {'message': f'OTP has been sent to the {email}'},
