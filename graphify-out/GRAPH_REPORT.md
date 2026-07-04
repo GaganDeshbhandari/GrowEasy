@@ -1,7 +1,7 @@
-# Graph Report - GrowEasy  (2026-06-19)
+# Graph Report - GrowEasy  (2026-07-05)
 
 ## Corpus Check
-- 109 files · ~1,221,450 words
+- 109 files · ~1,221,448 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
