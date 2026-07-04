@@ -1,0 +1,5 @@
+/home/gagan/DRFprojects/GrowEasy/backend/media/farmer/certifications/Screenshot_from_2025-09-24_13-01-00_dvPpv6P.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/farmer/certifications/Pasted_image_2.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/farmer/certifications/Screenshot_from_2025-09-24_13-01-00.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/farmer/certifications/Pasted_image.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/farmer/profiles/Screenshot_from_2025-09-09_21-09-45.png

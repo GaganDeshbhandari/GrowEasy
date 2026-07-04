@@ -1,0 +1,17 @@
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/DeliveryProfile.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/AvailableOrders.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/Earnings.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/MyDeliveries.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/Dashboard.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/delivery/CompleteProfile.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/FarmerDashboard.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/FarmerPublicProfile.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/FarmerOrders.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/FarmerProfile.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/AddProduct.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/EditProduct.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/FarmerPaymentDetails.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/farmer/CompleteProfile.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/products/ProductList.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/pages/products/ProductDetail.jsx
+/home/gagan/DRFprojects/GrowEasy/frontend/src/utils/media.js

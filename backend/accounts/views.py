@@ -71,9 +71,6 @@ class RegisterView(APIView):
       path='/'
     )
 
-    print(request.data)
-    print(type(request.data))
-
     return response
 
 class LoginView(APIView):
@@ -211,7 +208,7 @@ class FarmerPublicProfileView(generics.RetrieveAPIView):
 
         farmer = get_object_or_404(
             FarmerProfile.objects.select_related('user')
-            .prefetch_related('certificates', 'ratings'),
+            .prefetch_related('certifications', 'ratings'),
             pk=pk
         )
         cache.set(cache_key, farmer, settings.CACHE_TTL)

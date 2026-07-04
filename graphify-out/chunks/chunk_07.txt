@@ -1,0 +1,7 @@
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Screenshot_from_2025-09-14_22-14-37.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Screenshot_from_2026-03-30_11-53-53.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Pasted_image_6.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Pasted_image_2_3skNEYZ.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Pasted_image_6_UDumxu6.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Pasted_image_4_1MdYN4k.png
+/home/gagan/DRFprojects/GrowEasy/backend/media/products/images/Pasted_image_4_iS4OBqb.png
